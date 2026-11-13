@@ -1,0 +1,20 @@
+{
+  "pages": ["pages/dashboard/dashboard", "pages/report/report", "pages/commissions/commissions", "pages/login/login"],
+  "window": {
+    "navigationBarTitleText": "光影纪渠道端",
+    "navigationBarBackgroundColor": "#241b16",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f3ee"
+  },
+  "tabBar": {
+    "color": "#8b7b68",
+    "selectedColor": "#b98b5e",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/dashboard/dashboard", "text": "看板" },
+      { "pagePath": "pages/report/report", "text": "报单" },
+      { "pagePath": "pages/commissions/commissions", "text": "佣金" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

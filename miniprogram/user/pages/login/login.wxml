@@ -1,0 +1,6 @@
+<view class="container">
+  <view class="section-title">手机号登录</view>
+  <input class="input" type="number" placeholder="请输入手机号" bindinput="onInput" />
+  <view class="muted">生产环境应使用微信授权手机号；本地联调直接输入手机号。</view>
+  <view class="btn" bindtap="login">登录</view>
+</view>

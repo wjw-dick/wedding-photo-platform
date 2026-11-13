@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="section-title">我的今日</view>
+  <view class="row">
+    <view class="card" style="width:47%"><view class="muted">今日任务</view><view class="price">{{today}}</view></view>
+    <view class="card" style="width:47%"><view class="muted">本周任务</view><view class="price">{{week}}</view></view>
+  </view>
+  <view class="section-title">拍摄安排</view>
+  <view wx:for="{{tasks.today}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.customer_name || item.task_no}}</text><text class="tag">{{item.status || '待开始'}}</text></view>
+    <view class="muted">{{item.shoot_date}} {{item.gather_time}} · {{item.gather_place}}</view>
+  </view>
+  <view wx:if="{{!today}}" class="muted">今日暂无任务</view>
+</view>

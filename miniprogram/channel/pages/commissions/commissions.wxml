@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="section-title">佣金明细</view>
+  <view wx:for="{{commissions}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.order_no}}</text><text class="price">¥{{item.amount}}</text></view>
+    <view class="muted">{{item.status}} · {{item.created_at}}</view>
+  </view>
+  <view wx:if="{{!commissions.length}}" class="muted">暂无佣金记录</view>
+  <view class="section-title">结算单</view>
+  <view wx:for="{{settlements}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.settlement_no}}</text><text class="price">¥{{item.amount}}</text></view>
+    <view class="muted">{{item.period}} · {{item.status}}</view>
+  </view>
+</view>

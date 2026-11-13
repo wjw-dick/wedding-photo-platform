@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="section-title">我的订单</view>
+  <view wx:for="{{orders}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.order_no}}</text><text class="price">¥{{item.total_amount}}</text></view>
+    <view class="muted">{{item.status}} · 拍摄日期 {{item.shoot_date || '待定'}}</view>
+  </view>
+  <view wx:if="{{!orders.length}}" class="muted">暂无订单</view>
+  <view class="section-title">优惠券</view>
+  <view wx:for="{{coupons}}" wx:key="id" class="card"><view class="row"><text>{{item.coupon_name}}</text><text class="muted">{{item.status}}</text></view></view>
+</view>

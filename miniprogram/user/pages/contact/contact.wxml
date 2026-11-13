@@ -1,0 +1,9 @@
+<view class="container">
+  <view class="section-title">预约咨询</view>
+  <input class="input" placeholder="姓名 *" value="{{name}}" data-field="name" bindinput="onInput" />
+  <input class="input" placeholder="手机号 *" type="number" value="{{phone}}" data-field="phone" bindinput="onInput" />
+  <input class="input" placeholder="意向城市" value="{{city}}" data-field="city" bindinput="onInput" />
+  <textarea class="input" placeholder="需求说明" value="{{requirement}}" data-field="requirement" bindinput="onInput" />
+  <view class="btn" bindtap="submit">提交预约</view>
+  <view wx:if="{{done}}" class="muted" style="margin-top:16rpx">提交成功，顾问会尽快联系您。</view>
+</view>

@@ -1,0 +1,15 @@
+<view class="container">
+  <view class="section-title">渠道看板</view>
+  <view class="row">
+    <view class="card" style="width:47%"><view class="muted">累计报单</view><view class="price">{{data.reportCount || 0}}</view></view>
+    <view class="card" style="width:47%"><view class="muted">成交订单</view><view class="price">{{data.orderCount || 0}}</view></view>
+  </view>
+  <view class="row">
+    <view class="card" style="width:47%"><view class="muted">累计佣金</view><view class="price">¥{{data.commissionAmount || 0}}</view></view>
+    <view class="card" style="width:47%"><view class="muted">待结算</view><view class="price">¥{{data.pendingAmount || 0}}</view></view>
+  </view>
+  <view wx:if="{{subs.length}}" class="section-title">下级渠道</view>
+  <view wx:for="{{subs}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.channel_name}}</text><text class="tag">{{item.commission_rate}}</text></view>
+  </view>
+</view>

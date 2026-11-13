@@ -1,0 +1,22 @@
+<view class="container">
+  <view class="hero">
+    <view class="title">把爱情拍成电影</view>
+    <view class="sub">城市轻旅拍 · 婚礼跟拍 · 双影像记录</view>
+  </view>
+
+  <view class="section-title">精选套系</view>
+  <view wx:for="{{home.packages}}" wx:key="id" class="card" bindtap="goPackages">
+    <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" mode="aspectFill" style="width:100%;height:280rpx;border-radius:8rpx" />
+    <view class="row" style="margin-top:16rpx">
+      <text>{{item.name}}</text><text class="price">¥{{item.price}}</text>
+    </view>
+    <view class="muted">{{item.scene_count}} 场景 · {{item.dress_count}} 套服装</view>
+  </view>
+  <view wx:if="{{!loading && !home.packages.length}}" class="muted">暂未发布套系</view>
+
+  <view class="section-title">品牌承诺</view>
+  <view class="card">
+    <view class="muted">双机位拍摄 · 独立修图 · 48 小时选片 · 云端永久下载</view>
+    <view class="btn" bindtap="goContact">立即预约</view>
+  </view>
+</view>

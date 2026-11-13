@@ -1,0 +1,8 @@
+<view class="container">
+  <view class="section-title">我的</view>
+  <view class="card">
+    <view class="row"><text>{{user.realName || user.username || '员工'}}</text><text class="tag">生产端</text></view>
+    <view class="muted">{{user.phone || ''}}</view>
+  </view>
+  <view class="card" bindtap="logout"><view class="row"><text>退出登录</text><text>›</text></view></view>
+</view>

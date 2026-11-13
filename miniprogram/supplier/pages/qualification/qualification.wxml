@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="section-title">资质管理</view>
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.qual_type}}</text><text class="tag">{{item.expire_date}}</text></view>
+  </view>
+  <view class="section-title">新增资质</view>
+  <input class="input" placeholder="资质类型" value="{{qualType}}" data-field="qualType" bindinput="onInput" />
+  <input class="input" placeholder="到期日 YYYY-MM-DD" value="{{expireDate}}" data-field="expireDate" bindinput="onInput" />
+  <view class="btn" bindtap="add">提交</view>
+</view>

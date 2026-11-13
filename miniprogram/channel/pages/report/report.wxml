@@ -1,0 +1,12 @@
+<view class="container">
+  <view class="section-title">渠道报单</view>
+  <input class="input" placeholder="客户姓名 *" value="{{customerName}}" data-field="customerName" bindinput="onInput" />
+  <input class="input" type="number" placeholder="联系电话 *" value="{{phone}}" data-field="phone" bindinput="onInput" />
+  <textarea class="input" placeholder="需求说明" value="{{requirement}}" data-field="requirement" bindinput="onInput" />
+  <view class="btn" bindtap="submit">提交报单</view>
+  <view class="section-title">我的报单</view>
+  <view wx:for="{{reports}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.customer_name || item.report_no}}</text><text class="tag">{{item.status}}</text></view>
+    <view class="muted">{{item.phone}}</view>
+  </view>
+</view>

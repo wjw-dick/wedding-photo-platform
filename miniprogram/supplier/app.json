@@ -1,0 +1,20 @@
+{
+  "pages": ["pages/orders/orders", "pages/login/login", "pages/reconciliation/reconciliation", "pages/qualification/qualification"],
+  "window": {
+    "navigationBarTitleText": "光影纪供应商端",
+    "navigationBarBackgroundColor": "#241b16",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f3ee"
+  },
+  "tabBar": {
+    "color": "#8b7b68",
+    "selectedColor": "#b98b5e",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/orders/orders", "text": "制作单" },
+      { "pagePath": "pages/reconciliation/reconciliation", "text": "对账" },
+      { "pagePath": "pages/qualification/qualification", "text": "资质" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

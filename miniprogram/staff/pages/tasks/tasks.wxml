@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="section-title">拍摄任务 · {{date}}</view>
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.task_no}}</text><text class="tag">{{item.status}}</text></view>
+    <view class="muted">{{item.customer_name}} · {{item.gather_time}} · {{item.gather_place}}</view>
+    <view wx:if="{{item.status === 'DISPATCHED'}}" class="btn" data-id="{{item.id}}" bindtap="checkin">GPS 打卡</view>
+    <view wx:if="{{item.status === 'CHECKED_IN'}}" class="btn" data-id="{{item.id}}" bindtap="finish">完成拍摄</view>
+  </view>
+  <view wx:if="{{!list.length}}" class="muted">今日暂无拍摄任务</view>
+</view>

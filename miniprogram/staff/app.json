@@ -1,0 +1,25 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/tasks/tasks",
+    "pages/mine/mine"
+  ],
+  "window": {
+    "navigationBarTitleText": "光影纪生产端",
+    "navigationBarBackgroundColor": "#241b16",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f3ee"
+  },
+  "tabBar": {
+    "color": "#8b7b68",
+    "selectedColor": "#b98b5e",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "今日" },
+      { "pagePath": "pages/tasks/tasks", "text": "任务" },
+      { "pagePath": "pages/mine/mine", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

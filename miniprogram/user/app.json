@@ -1,0 +1,30 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/packages/packages",
+    "pages/cases/cases",
+    "pages/contact/contact",
+    "pages/member/member",
+    "pages/orders/orders",
+    "pages/login/login"
+  ],
+  "window": {
+    "navigationBarTitleText": "光影纪婚纱摄影",
+    "navigationBarBackgroundColor": "#241b16",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f3ee"
+  },
+  "tabBar": {
+    "color": "#8b7b68",
+    "selectedColor": "#b98b5e",
+    "backgroundColor": "#ffffff",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "首页" },
+      { "pagePath": "pages/packages/packages", "text": "套系" },
+      { "pagePath": "pages/cases/cases", "text": "客片" },
+      { "pagePath": "pages/member/member", "text": "我的" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

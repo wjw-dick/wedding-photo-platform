@@ -1,0 +1,123 @@
+{
+  "total": 23,
+  "passed": 23,
+  "failed": 0,
+  "tenantCode": "reg548509",
+  "results": [
+    {
+      "name": "平台端登录",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "开通新租户",
+      "ok": true,
+      "detail": "HTTP 200 {'code': 0, 'message': 'ok', 'data': {'tenantId': 5, 'tenantCode': 'reg548509', 'adminUsername': 'admin', 'initialPassword': 'Reg@123456', 'notice': '初始密码仅本次展示，请立即修改'}, 'timestamp': 1794548509780}"
+    },
+    {
+      "name": "新租户管理员登录",
+      "ok": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "name": "租户通用 CRUD 创建套系",
+      "ok": true,
+      "detail": "packageId=9"
+    },
+    {
+      "name": "创建订单",
+      "ok": true,
+      "detail": "HTTP 200 orderNo=WO202611131341490001"
+    },
+    {
+      "name": "平台端访问租户订单明细被拒",
+      "ok": true,
+      "detail": "HTTP 403 {'code': 403, 'message': '平台账号不可访问租户端', 'timestamp': 1794548509977}"
+    },
+    {
+      "name": "跨租户访问订单返回 403",
+      "ok": true,
+      "detail": "HTTP 403 {'code': 403, 'message': '无权访问其他租户的订单', 'timestamp': 1794548510107}"
+    },
+    {
+      "name": "跨租户访问会员返回 403/404",
+      "ok": true,
+      "detail": "HTTP 403"
+    },
+    {
+      "name": "租户账号访问平台接口被拒",
+      "ok": true,
+      "detail": "HTTP 403"
+    },
+    {
+      "name": "支付回调幂等（重复 payNo 只记一次）",
+      "ok": true,
+      "detail": "paid=100.0 payRecords=1 HTTP 200/200"
+    },
+    {
+      "name": "20 并发抢同一档期仅 1 单成功",
+      "ok": true,
+      "detail": "success=1 codes=[429, 429, 429, 429, 400, 429, 429, 400, 200, 400, 429, 400, 400, 400, 400, 400, 400, 400, 400, 400]"
+    },
+    {
+      "name": "报表异步导出完成",
+      "ok": true,
+      "detail": "task=5 status=DONE"
+    },
+    {
+      "name": "报表下载签名 URL",
+      "ok": true,
+      "detail": "/api/open/storage?token=42CK6iMrhsjtgRdT8zZEX9Uc6SXHmDR109nqQMirRgnzgDG5l5%2FLW%2BeFBZgZbZF6CiA8%2FKFcNSEs%2BaIW8jYvDIJ%2B9K0ZmMFfqybGUrtj6DbEVlBcZ8LpMf%2B8661t"
+    },
+    {
+      "name": "合同 PDF 生成",
+      "ok": true,
+      "detail": "HTTP 200 /api/open/storage?token=2i8W0Vm9VwbkN%2BM2z7uQyfP8%2BG3kAG%2B8SNCVCapt0CVEzuowgri7jHWRwmE8ZAH5OsknQk1IADXtZ9JwerEsfG5NBWFkXVUPsg5PXN0VIozJig16U5i4gHGF1RcPHlqq7mLqTBE%3D"
+    },
+    {
+      "name": "多端入口二维码 PNG",
+      "ok": true,
+      "detail": "HTTP 200 bytes=424"
+    },
+    {
+      "name": "上传伪装图片被拒",
+      "ok": true,
+      "detail": "HTTP 415 {\"code\":415,\"message\":\"文件内容与扩展名不符，已拒绝上传\",\"timestamp\":1794548511296}"
+    },
+    {
+      "name": "订单筛选 SQL 注入无效",
+      "ok": true,
+      "detail": "HTTP 200 total=0"
+    },
+    {
+      "name": "无微信凭证同步明确报错",
+      "ok": true,
+      "detail": "无公众号账号，跳过"
+    },
+    {
+      "name": "UnionID 多端同一会员",
+      "ok": true,
+      "detail": "member=4/4"
+    },
+    {
+      "name": "租户审计可查询且只读",
+      "ok": true,
+      "detail": "total=26"
+    },
+    {
+      "name": "审计控制器无写接口",
+      "ok": true,
+      "detail": "无写接口"
+    },
+    {
+      "name": "公开客片仅授权内容",
+      "ok": true,
+      "detail": "count=0"
+    },
+    {
+      "name": "平台端无租户订单明细接口",
+      "ok": true,
+      "detail": "HTTP 404"
+    }
+  ]
+}

@@ -1,0 +1,1439 @@
+-- =============================================================
+-- 婚礼影像数字化多端 SaaS 平台 · 基线库结构（MySQL 8 / utf8mb4）
+-- 规范：业务表全部含 tenant_id + 复合索引；主键 BIGINT 自增；
+--       created_at / updated_at / deleted 为审计三件套。
+-- =============================================================
+
+CREATE TABLE platform_plan (
+  plan_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  plan_name VARCHAR(64) NOT NULL,
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  billing_cycle VARCHAR(16) NOT NULL DEFAULT 'YEAR' COMMENT 'YEAR/QUARTER/MONTH',
+  seat_limit INT NOT NULL DEFAULT 5,
+  mp_account_limit INT NOT NULL DEFAULT 1,
+  storage_quota_gb INT NOT NULL DEFAULT 100,
+  sms_quota INT NOT NULL DEFAULT 1000,
+  api_quota INT NOT NULL DEFAULT 100000,
+  trial_days INT NOT NULL DEFAULT 14,
+  allow_trial TINYINT NOT NULL DEFAULT 1,
+  status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='平台套餐';
+
+CREATE TABLE platform_tenant (
+  tenant_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_code VARCHAR(64) NOT NULL,
+  tenant_name VARCHAR(128) NOT NULL,
+  industry VARCHAR(64) DEFAULT 'WEDDING_PHOTO',
+  contact_name VARCHAR(64),
+  contact_phone VARCHAR(32),
+  plan_id BIGINT,
+  status VARCHAR(16) NOT NULL DEFAULT 'TRIAL' COMMENT 'TRIAL/ACTIVE/OVERDUE/SUSPENDED/EXPIRED',
+  trial_end_at DATETIME,
+  expire_at DATETIME,
+  seat_limit INT NOT NULL DEFAULT 5,
+  mp_account_limit INT NOT NULL DEFAULT 1,
+  storage_quota_gb INT NOT NULL DEFAULT 100,
+  sms_quota INT NOT NULL DEFAULT 1000,
+  api_quota INT NOT NULL DEFAULT 100000,
+  over_limit_policy VARCHAR(16) NOT NULL DEFAULT 'BLOCK_WRITE' COMMENT 'BLOCK_WRITE/READ_ONLY',
+  remark VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_code (tenant_code),
+  KEY idx_status (status),
+  KEY idx_expire (expire_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='租户';
+
+CREATE TABLE platform_tenant_quota_usage (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  used_seat INT NOT NULL DEFAULT 0,
+  used_mp_account INT NOT NULL DEFAULT 0,
+  used_storage_bytes BIGINT NOT NULL DEFAULT 0,
+  used_sms INT NOT NULL DEFAULT 0,
+  used_api BIGINT NOT NULL DEFAULT 0,
+  stat_date DATE NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_date (tenant_id, stat_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='配额用量';
+
+CREATE TABLE platform_bill (
+  bill_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  bill_period VARCHAR(16) NOT NULL COMMENT 'yyyy-MM',
+  item_name VARCHAR(128) NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID/PAID/OVERDUE',
+  paid_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_period (tenant_id, bill_period),
+  KEY idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台账单';
+
+CREATE TABLE platform_audit (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  operator_id BIGINT,
+  operator_name VARCHAR(64),
+  action VARCHAR(64) NOT NULL,
+  target_tenant_id BIGINT,
+  detail VARCHAR(2000),
+  result VARCHAR(16) NOT NULL DEFAULT 'SUCCESS',
+  ip VARCHAR(64),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant (target_tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台审计';
+
+CREATE TABLE platform_admin (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64) NOT NULL,
+  password VARCHAR(128) NOT NULL,
+  real_name VARCHAR(64),
+  role VARCHAR(32) NOT NULL DEFAULT 'PLATFORM_OPERATOR' COMMENT 'PLATFORM_ADMIN/PLATFORM_OPERATOR/PLATFORM_FINANCE',
+  status TINYINT NOT NULL DEFAULT 1,
+  last_login_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台账号';
+
+CREATE TABLE platform_tenant_admin (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  is_master TINYINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_user (tenant_id, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户主管理员';
+
+CREATE TABLE platform_announcement (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(200) NOT NULL,
+  content TEXT,
+  target_type VARCHAR(16) NOT NULL DEFAULT 'ALL' COMMENT 'ALL/PLAN/TENANT',
+  target_value VARCHAR(64),
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT',
+  publish_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台公告';
+
+CREATE TABLE platform_announcement_read (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  announcement_id BIGINT NOT NULL,
+  tenant_id BIGINT NOT NULL,
+  read_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_ann_tenant (announcement_id, tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告已读';
+
+-- ---------------- 租户基础 / RBAC ----------------
+
+CREATE TABLE sys_user (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT,
+  username VARCHAR(64) NOT NULL,
+  password VARCHAR(128) NOT NULL,
+  real_name VARCHAR(64) NOT NULL,
+  phone VARCHAR(32),
+  email VARCHAR(128),
+  avatar VARCHAR(500),
+  user_type VARCHAR(24) NOT NULL DEFAULT 'STAFF' COMMENT 'TENANT_ADMIN/STAFF/PHOTOGRAPHER/MAKEUP/EDITOR/SUPPLIER/CHANNEL',
+  status TINYINT NOT NULL DEFAULT 1,
+  wx_openid VARCHAR(128),
+  last_login_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_username (tenant_id, username),
+  KEY idx_tenant_created (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户员工账号';
+
+CREATE TABLE sys_role (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  role_code VARCHAR(64) NOT NULL,
+  role_name VARCHAR(64) NOT NULL,
+  data_scope VARCHAR(16) NOT NULL DEFAULT 'ALL' COMMENT 'ALL/STORE/SELF',
+  remark VARCHAR(255),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_code (tenant_id, role_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色';
+
+CREATE TABLE sys_menu (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  parent_id BIGINT NOT NULL DEFAULT 0,
+  menu_name VARCHAR(64) NOT NULL,
+  menu_type VARCHAR(16) NOT NULL DEFAULT 'MENU' COMMENT 'DIR/MENU/BUTTON',
+  path VARCHAR(255),
+  component VARCHAR(255),
+  permission VARCHAR(128),
+  icon VARCHAR(64),
+  sort_no INT NOT NULL DEFAULT 0,
+  visible TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_parent (tenant_id, parent_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单与权限';
+
+CREATE TABLE sys_role_menu (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
+  menu_id BIGINT NOT NULL,
+  UNIQUE KEY uk_role_menu (tenant_id, role_id, menu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色菜单';
+
+CREATE TABLE sys_user_role (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
+  UNIQUE KEY uk_user_role (tenant_id, user_id, role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色';
+
+CREATE TABLE sys_store (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_name VARCHAR(128) NOT NULL,
+  address VARCHAR(255),
+  phone VARCHAR(32),
+  business_hours VARCHAR(128),
+  longitude DECIMAL(10,6),
+  latitude DECIMAL(10,6),
+  capacity INT NOT NULL DEFAULT 4 COMMENT '每日档期容量',
+  commission_rule VARCHAR(500),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_status (tenant_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='门店';
+
+CREATE TABLE sys_param (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  param_group VARCHAR(64) NOT NULL,
+  param_key VARCHAR(128) NOT NULL,
+  param_value TEXT,
+  value_type VARCHAR(16) NOT NULL DEFAULT 'STRING',
+  remark VARCHAR(255),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_key (tenant_id, param_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统参数';
+
+CREATE TABLE sys_audit (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT,
+  operator_id BIGINT,
+  operator_name VARCHAR(64),
+  module VARCHAR(64),
+  action VARCHAR(64),
+  target_type VARCHAR(64),
+  target_id VARCHAR(64),
+  detail TEXT,
+  result VARCHAR(16) NOT NULL DEFAULT 'SUCCESS',
+  ip VARCHAR(64),
+  cost_ms BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_created (tenant_id, created_at),
+  KEY idx_tenant_module (tenant_id, module)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='租户审计（只读）';
+
+CREATE TABLE sys_language (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  lang_code VARCHAR(16) NOT NULL,
+  lang_name VARCHAR(64) NOT NULL,
+  is_default TINYINT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  sort_no INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_lang (tenant_id, lang_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='语言';
+
+CREATE TABLE sys_i18n (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  lang_code VARCHAR(16) NOT NULL,
+  i18n_key VARCHAR(255) NOT NULL,
+  i18n_value TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_lang_key (tenant_id, lang_code, i18n_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='语言包';
+
+CREATE TABLE sys_menu_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  end_type VARCHAR(32) NOT NULL COMMENT 'MP/PC_OFFICIAL/PC_ADMIN/MINI_TABBAR/H5',
+  config_name VARCHAR(64) NOT NULL,
+  published TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_end (tenant_id, end_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单可视化配置';
+
+CREATE TABLE sys_menu_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  config_id BIGINT NOT NULL,
+  parent_id BIGINT NOT NULL DEFAULT 0,
+  title VARCHAR(64) NOT NULL,
+  icon VARCHAR(64),
+  item_type VARCHAR(24) NOT NULL DEFAULT 'VIEW' COMMENT 'VIEW/LINK/ARTICLE/PACKAGE',
+  path VARCHAR(255),
+  sort_no INT NOT NULL DEFAULT 0,
+  visible TINYINT NOT NULL DEFAULT 1,
+  extra_json VARCHAR(1000),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_config (tenant_id, config_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单项';
+
+CREATE TABLE sys_login_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT,
+  user_id BIGINT,
+  username VARCHAR(64),
+  user_type VARCHAR(24),
+  success TINYINT NOT NULL,
+  ip VARCHAR(64),
+  user_agent VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_created (tenant_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='登录日志';
+
+CREATE TABLE sys_notice (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  user_id BIGINT,
+  title VARCHAR(200) NOT NULL,
+  content TEXT,
+  channel VARCHAR(24) NOT NULL DEFAULT 'SITE',
+  read_flag TINYINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_user (tenant_id, user_id, read_flag)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='站内信';
+
+-- ---------------- 存储 / 消息 / SSO ----------------
+
+CREATE TABLE storage_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  provider VARCHAR(16) NOT NULL COMMENT 'LOCAL/S3/OSS/COS/MINIO',
+  config_json TEXT NOT NULL COMMENT 'AES 加密后的 JSON',
+  active_flag TINYINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_provider (tenant_id, provider)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='对象存储配置';
+
+CREATE TABLE msg_channel (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  channel VARCHAR(32) NOT NULL COMMENT 'MP_TEMPLATE/MINI_SUBSCRIBE/APP_PUSH/SITE',
+  enabled TINYINT NOT NULL DEFAULT 0,
+  config_json TEXT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_channel (tenant_id, channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息通道';
+
+CREATE TABLE sms_channel (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  provider VARCHAR(32) NOT NULL COMMENT 'ALIYUN/TENCENT/HUAWEI/JD/AWS_SNS/LOCAL_LOG',
+  enabled TINYINT NOT NULL DEFAULT 0,
+  config_json TEXT,
+  test_ok TINYINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_sms (tenant_id, provider)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='短信渠道（单选互斥）';
+
+CREATE TABLE msg_template (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  node VARCHAR(64) NOT NULL COMMENT 'ORDER_PAID/SHOOT_REMIND/SELECT/RETOUCH_DONE/PICKUP/BALANCE/CHANNEL_SETTLE',
+  channel VARCHAR(32) NOT NULL,
+  template_id VARCHAR(128),
+  title VARCHAR(200),
+  field_mapping VARCHAR(1000) COMMENT 'thing1=xxx,time2=xxx',
+  enabled TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_node_channel (tenant_id, node, channel)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息模板';
+
+CREATE TABLE sso_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  enabled TINYINT NOT NULL DEFAULT 0,
+  protocol VARCHAR(16) COMMENT 'CAS/OAUTH2/OIDC/SA_TOKEN',
+  server_url VARCHAR(255),
+  service_callback VARCHAR(255),
+  condition_field VARCHAR(128),
+  account_mapping VARCHAR(500),
+  secret_encrypted VARCHAR(1000),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant (tenant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='SSO 配置';
+
+-- ---------------- 门店资源 / 套系 ----------------
+
+CREATE TABLE store_studio (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT NOT NULL,
+  studio_name VARCHAR(128) NOT NULL,
+  studio_type VARCHAR(24) NOT NULL DEFAULT 'INDOOR' COMMENT 'INDOOR/OUTDOOR/TRAVEL/MAKEUP/DRESS',
+  capacity INT NOT NULL DEFAULT 1,
+  available_slots VARCHAR(500),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_store (tenant_id, store_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='影棚/场景/化妆间';
+
+CREATE TABLE pkg_package (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  package_no VARCHAR(64) NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  name_en VARCHAR(128),
+  cover_url VARCHAR(500),
+  shoot_duration VARCHAR(64),
+  dress_count INT NOT NULL DEFAULT 0,
+  scene_count INT NOT NULL DEFAULT 0,
+  finished_count INT NOT NULL DEFAULT 0,
+  retouch_count INT NOT NULL DEFAULT 0,
+  album_spec VARCHAR(255),
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  deposit DECIMAL(12,2) NOT NULL DEFAULT 0,
+  delivery_days INT NOT NULL DEFAULT 30,
+  description TEXT,
+  description_en TEXT,
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT' COMMENT 'DRAFT/ON/OFF',
+  sort_no INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_no (tenant_id, package_no),
+  KEY idx_tenant_status (tenant_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='套系';
+
+CREATE TABLE pkg_package_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  package_id BIGINT NOT NULL,
+  item_name VARCHAR(128) NOT NULL,
+  item_value VARCHAR(500),
+  sort_no INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='套系包含项';
+
+CREATE TABLE pkg_package_store (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  package_id BIGINT NOT NULL,
+  store_id BIGINT NOT NULL,
+  sale_price DECIMAL(12,2),
+  UNIQUE KEY uk_pkg_store (tenant_id, package_id, store_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='套系可售门店';
+
+CREATE TABLE pkg_addon (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  addon_code VARCHAR(64) NOT NULL,
+  addon_name VARCHAR(128) NOT NULL,
+  addon_type VARCHAR(32) NOT NULL DEFAULT 'EXTRA_PHOTO' COMMENT 'EXTRA_PHOTO/EXTRA_ALBUM/FRAME/URGENT/DRESS_UP/MAKEUP',
+  unit VARCHAR(32) DEFAULT '张',
+  base_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_code (tenant_id, addon_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='加购项';
+
+CREATE TABLE pkg_addon_price (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  addon_id BIGINT NOT NULL,
+  package_id BIGINT,
+  store_id BIGINT,
+  price DECIMAL(12,2) NOT NULL,
+  UNIQUE KEY uk_addon_scope (tenant_id, addon_id, package_id, store_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='加购项价格';
+
+-- ---------------- 档期 ----------------
+
+CREATE TABLE sch_resource (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT NOT NULL,
+  resource_type VARCHAR(24) NOT NULL COMMENT 'PHOTOGRAPHER/MAKEUP/STUDIO/CAMERA/DRESS_ROOM',
+  resource_name VARCHAR(128) NOT NULL,
+  employee_id BIGINT,
+  studio_id BIGINT,
+  capacity INT NOT NULL DEFAULT 1,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_store (tenant_id, store_id, resource_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='档期资源';
+
+CREATE TABLE sch_slot (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT NOT NULL,
+  resource_id BIGINT NOT NULL,
+  slot_date DATE NOT NULL,
+  slot_start TIME NOT NULL,
+  slot_end TIME NOT NULL,
+  capacity INT NOT NULL DEFAULT 1,
+  used_count INT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN/CLOSED/LOCKED',
+  order_id BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_resource_slot (tenant_id, resource_id, slot_date, slot_start),
+  KEY idx_tenant_date (tenant_id, slot_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='档期时段';
+
+CREATE TABLE sch_lock (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  lock_key VARCHAR(128) NOT NULL,
+  resource_id BIGINT,
+  slot_date DATE,
+  slot_start TIME,
+  order_no VARCHAR(64),
+  member_id BIGINT,
+  expire_at DATETIME NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'LOCKED' COMMENT 'LOCKED/CONFIRMED/RELEASED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_key (tenant_id, lock_key),
+  KEY idx_tenant_expire (tenant_id, expire_at, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='锁档';
+
+-- ---------------- 订单 / 支付 / 合同 ----------------
+
+CREATE TABLE order_main (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_no VARCHAR(64) NOT NULL,
+  store_id BIGINT NOT NULL,
+  member_id BIGINT,
+  customer_name VARCHAR(64) NOT NULL,
+  customer_phone VARCHAR(32) NOT NULL,
+  package_id BIGINT,
+  package_snapshot VARCHAR(4000),
+  channel_id BIGINT,
+  salesman_id BIGINT,
+  shoot_date DATE,
+  status VARCHAR(24) NOT NULL DEFAULT 'LEAD' COMMENT 'LEAD/ARRIVED/DEPOSIT/SCHEDULED/SHOOTING/SELECTING/RETOUCHING/PRODUCING/PICKUP/COMPLETED',
+  abnormal_status VARCHAR(24) COMMENT 'RESCHEDULED/CANCELLED/ADDON/REWORK/OVERDUE',
+  total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  addon_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  refund_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  deposit_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  balance_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  commission_snapshot TEXT,
+  source VARCHAR(24) NOT NULL DEFAULT 'STORE' COMMENT 'STORE/ONLINE/CHANNEL',
+  retain_until DATE,
+  remark VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_order_no (tenant_id, order_no),
+  KEY idx_tenant_status (tenant_id, status, created_at),
+  KEY idx_tenant_store (tenant_id, store_id),
+  KEY idx_tenant_phone (tenant_id, customer_phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单';
+
+CREATE TABLE order_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  item_type VARCHAR(24) NOT NULL COMMENT 'PACKAGE/ADDON',
+  item_id BIGINT,
+  item_name VARCHAR(128) NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  unit_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  snapshot VARCHAR(1000),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细';
+
+CREATE TABLE order_status_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  from_status VARCHAR(24),
+  to_status VARCHAR(24) NOT NULL,
+  action VARCHAR(64),
+  operator_id BIGINT,
+  operator_name VARCHAR(64),
+  remark VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单状态流水';
+
+CREATE TABLE pay_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  order_no VARCHAR(64) NOT NULL,
+  pay_no VARCHAR(64) NOT NULL COMMENT '支付渠道流水号',
+  pay_type VARCHAR(24) NOT NULL COMMENT 'DEPOSIT/BALANCE/ADDON',
+  channel VARCHAR(24) NOT NULL DEFAULT 'WECHAT' COMMENT 'WECHAT/ALIPAY/OFFLINE',
+  amount DECIMAL(12,2) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'SUCCESS',
+  idempotent_key VARCHAR(200) NOT NULL,
+  callback_raw TEXT,
+  paid_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_idempotent (tenant_id, idempotent_key),
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付流水';
+
+CREATE TABLE refund_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  refund_no VARCHAR(64) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  reason VARCHAR(500),
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/APPROVED/REJECTED/DONE',
+  audit_user_id BIGINT,
+  audit_remark VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款';
+
+CREATE TABLE order_contract (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  contract_name VARCHAR(128) NOT NULL,
+  content TEXT,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='合同模板';
+
+CREATE TABLE order_contract_sign (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  contract_id BIGINT,
+  contract_snapshot TEXT,
+  sign_image VARCHAR(500),
+  signed_at DATETIME,
+  pdf_url VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='合同签署记录';
+
+CREATE TABLE order_invoice (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  title_type VARCHAR(16) NOT NULL DEFAULT 'PERSONAL',
+  title VARCHAR(200),
+  tax_no VARCHAR(64),
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'APPLIED' COMMENT 'APPLIED/ISSUED/REJECTED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='发票';
+
+-- ---------------- 拍摄生产 / 客片 ----------------
+
+CREATE TABLE shoot_task (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  store_id BIGINT NOT NULL,
+  task_no VARCHAR(64) NOT NULL,
+  shoot_date DATE NOT NULL,
+  gather_time VARCHAR(16),
+  gather_place VARCHAR(255),
+  photographer_id BIGINT,
+  makeup_id BIGINT,
+  assistant_id BIGINT,
+  camera_count INT NOT NULL DEFAULT 1,
+  dress_scene VARCHAR(500),
+  special_demand VARCHAR(1000),
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/ASSIGNED/CHECKED_IN/DONE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_task_no (tenant_id, task_no),
+  KEY idx_tenant_date (tenant_id, shoot_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拍摄任务单';
+
+CREATE TABLE shoot_checkin (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  task_id BIGINT NOT NULL,
+  employee_id BIGINT NOT NULL,
+  longitude DECIMAL(10,6),
+  latitude DECIMAL(10,6),
+  distance_m INT,
+  photo_url VARCHAR(500),
+  abnormal_type VARCHAR(32),
+  abnormal_desc VARCHAR(500),
+  checked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_task (tenant_id, task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='拍摄打卡';
+
+CREATE TABLE media_file (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT,
+  order_no VARCHAR(64),
+  category VARCHAR(16) NOT NULL COMMENT 'RAW/RETOUCHED/PRINT/MATERIAL/CASE/DRAFT',
+  file_name VARCHAR(255) NOT NULL,
+  object_key VARCHAR(500) NOT NULL,
+  provider VARCHAR(16) NOT NULL,
+  bucket VARCHAR(128),
+  size_bytes BIGINT NOT NULL DEFAULT 0,
+  md5 VARCHAR(64),
+  content_type VARCHAR(128),
+  watermark TINYINT NOT NULL DEFAULT 0,
+  authorized TINYINT NOT NULL DEFAULT 0,
+  created_by BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id, category),
+  KEY idx_tenant_md5 (tenant_id, md5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='媒体文件';
+
+CREATE TABLE upload_task (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  upload_id VARCHAR(64) NOT NULL,
+  order_no VARCHAR(64),
+  file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL DEFAULT 0,
+  md5 VARCHAR(64),
+  chunk_size INT NOT NULL DEFAULT 5242880,
+  uploaded_parts INT NOT NULL DEFAULT 0,
+  total_parts INT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'UPLOADING' COMMENT 'UPLOADING/DONE/FAILED',
+  object_key VARCHAR(500),
+  created_by BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_upload (tenant_id, upload_id),
+  KEY idx_tenant_md5 (tenant_id, md5)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='分片上传任务';
+
+-- ---------------- 选片 / 修片 / 制作 / 交付 / 礼服 ----------------
+
+CREATE TABLE selection_sheet (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  sheet_no VARCHAR(64) NOT NULL,
+  sellable_count INT NOT NULL DEFAULT 0,
+  extra_photo_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  selected_count INT NOT NULL DEFAULT 0,
+  addon_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  deadline_at DATETIME,
+  status VARCHAR(16) NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN/SUBMITTED/CONFIRMED/EXPIRED',
+  sign_image VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_sheet_no (tenant_id, sheet_no),
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='选片单';
+
+CREATE TABLE selection_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  sheet_id BIGINT NOT NULL,
+  media_id BIGINT,
+  selected TINYINT NOT NULL DEFAULT 0,
+  is_extra TINYINT NOT NULL DEFAULT 0,
+  price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_sheet (tenant_id, sheet_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='选片明细';
+
+CREATE TABLE retouch_task (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  task_no VARCHAR(64) NOT NULL,
+  editor_id BIGINT,
+  spec VARCHAR(255) COMMENT '调色/磨皮/瘦身/合成',
+  item_count INT NOT NULL DEFAULT 0,
+  progress INT NOT NULL DEFAULT 0,
+  rework_count INT NOT NULL DEFAULT 0,
+  rework_limit INT NOT NULL DEFAULT 2,
+  deadline_at DATETIME,
+  status VARCHAR(16) NOT NULL DEFAULT 'POOL' COMMENT 'POOL/CLAIMED/SUBMITTED/DONE/REWORK',
+  reference_urls VARCHAR(1000),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_task_no (tenant_id, task_no),
+  KEY idx_tenant_editor (tenant_id, editor_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='修片任务';
+
+CREATE TABLE product_order (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  product_no VARCHAR(64) NOT NULL,
+  product_type VARCHAR(32) NOT NULL COMMENT 'ALBUM/FRAME/TABLE/H_POSTER',
+  spec VARCHAR(500),
+  supplier_id BIGINT,
+  print_file_url VARCHAR(500),
+  status VARCHAR(24) NOT NULL DEFAULT 'CREATED' COMMENT 'CREATED/ASSIGNED/ACCEPTED/REJECTED/PRODUCING/SHIPPED/RECEIVED',
+  reject_reason VARCHAR(500),
+  tracking_company VARCHAR(64),
+  tracking_no VARCHAR(64),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_product_no (tenant_id, product_no),
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='制作单';
+
+CREATE TABLE delivery_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  delivery_type VARCHAR(24) NOT NULL DEFAULT 'PICKUP',
+  notified_channels VARCHAR(128),
+  delivered_at DATETIME,
+  retain_start DATE,
+  retain_end DATE,
+  extended TINYINT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/NOTIFIED/DONE/CLEANED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交付与保留期';
+
+CREATE TABLE dress (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  dress_no VARCHAR(64) NOT NULL,
+  category VARCHAR(32) NOT NULL,
+  size VARCHAR(32),
+  color VARCHAR(32),
+  deposit DECIMAL(12,2) NOT NULL DEFAULT 0,
+  rent_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+  clean_cycle_days INT NOT NULL DEFAULT 3,
+  status VARCHAR(16) NOT NULL DEFAULT 'AVAILABLE' COMMENT 'AVAILABLE/RENTED/CLEANING/MAINTENANCE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_dress_no (tenant_id, dress_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='礼服';
+
+CREATE TABLE dress_rental (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  dress_id BIGINT NOT NULL,
+  order_id BIGINT,
+  member_id BIGINT,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  deposit DECIMAL(12,2) NOT NULL DEFAULT 0,
+  rent_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  overdue_fee DECIMAL(12,2) NOT NULL DEFAULT 0,
+  damage_fee DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'RENTED' COMMENT 'RENTED/RETURNED/CLEANING/CLOSED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_dress (tenant_id, dress_id, start_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='礼服租赁';
+
+-- ---------------- 会员 / CRM / 渠道 / 供应商 / 员工 ----------------
+
+CREATE TABLE member (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  union_id VARCHAR(128),
+  open_id VARCHAR(128),
+  phone VARCHAR(32),
+  nickname VARCHAR(128),
+  avatar VARCHAR(500),
+  real_name VARCHAR(64),
+  gender TINYINT,
+  birthday DATE,
+  wedding_date DATE,
+  level_id BIGINT,
+  points INT NOT NULL DEFAULT 0,
+  balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+  source VARCHAR(24) DEFAULT 'MINI',
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_union (tenant_id, union_id),
+  KEY idx_tenant_phone (tenant_id, phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='UnionID 会员';
+
+CREATE TABLE member_account (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  change_type VARCHAR(24) NOT NULL COMMENT 'POINTS/BALANCE',
+  amount DECIMAL(12,2) NOT NULL,
+  balance_after DECIMAL(12,2) NOT NULL DEFAULT 0,
+  biz_no VARCHAR(64),
+  remark VARCHAR(255),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_member (tenant_id, member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员账户流水';
+
+CREATE TABLE member_level (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  level_name VARCHAR(64) NOT NULL,
+  min_points INT NOT NULL DEFAULT 0,
+  discount_rate DECIMAL(5,2) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会员等级';
+
+CREATE TABLE points_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  member_id BIGINT NOT NULL,
+  points INT NOT NULL,
+  biz_type VARCHAR(32),
+  biz_no VARCHAR(64),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_member (tenant_id, member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分流水';
+
+CREATE TABLE coupon (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  coupon_name VARCHAR(128) NOT NULL,
+  coupon_type VARCHAR(16) NOT NULL DEFAULT 'CASH' COMMENT 'CASH/DISCOUNT',
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  threshold DECIMAL(12,2) NOT NULL DEFAULT 0,
+  total_count INT NOT NULL DEFAULT 0,
+  issued_count INT NOT NULL DEFAULT 0,
+  start_at DATETIME,
+  end_at DATETIME,
+  store_scope VARCHAR(255),
+  package_scope VARCHAR(255),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券';
+
+CREATE TABLE coupon_grant (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  coupon_id BIGINT NOT NULL,
+  member_id BIGINT,
+  order_id BIGINT,
+  used_at DATETIME,
+  status VARCHAR(16) NOT NULL DEFAULT 'UNUSED' COMMENT 'UNUSED/USED/EXPIRED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_member (tenant_id, member_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优惠券发放';
+
+CREATE TABLE crm_lead (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT,
+  name VARCHAR(64) NOT NULL,
+  phone VARCHAR(32) NOT NULL,
+  source VARCHAR(32) NOT NULL DEFAULT 'ONLINE',
+  channel_id BIGINT,
+  package_id BIGINT,
+  intent VARCHAR(500),
+  owner_id BIGINT,
+  protect_until DATETIME,
+  status VARCHAR(24) NOT NULL DEFAULT 'NEW' COMMENT 'NEW/FOLLOWING/TRANSFERRED/INVALID/DEAL',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_status (tenant_id, status, created_at),
+  KEY idx_tenant_phone (tenant_id, phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='线索';
+
+CREATE TABLE lead_follow (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  lead_id BIGINT NOT NULL,
+  follow_type VARCHAR(24),
+  content VARCHAR(1000),
+  operator_id BIGINT,
+  next_follow_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_lead (tenant_id, lead_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='线索跟进';
+
+CREATE TABLE channel (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  channel_no VARCHAR(64) NOT NULL,
+  channel_name VARCHAR(128) NOT NULL,
+  channel_type VARCHAR(32) NOT NULL DEFAULT 'HOTEL' COMMENT 'HOTEL/PLANNER/DRESS/OTHER',
+  region VARCHAR(64),
+  contact_name VARCHAR(64),
+  contact_phone VARCHAR(32),
+  commission_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+  commission_ladder VARCHAR(1000),
+  credit_limit DECIMAL(12,2) NOT NULL DEFAULT 0,
+  settle_cycle VARCHAR(16) NOT NULL DEFAULT 'MONTH',
+  parent_id BIGINT,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_channel_no (tenant_id, channel_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='渠道商';
+
+CREATE TABLE channel_report (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  channel_id BIGINT NOT NULL,
+  customer_name VARCHAR(64) NOT NULL,
+  customer_phone VARCHAR(32) NOT NULL,
+  package_id BIGINT,
+  store_id BIGINT,
+  report_no VARCHAR(64) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/APPROVED/REJECTED/DUPLICATE',
+  protect_until DATETIME,
+  order_id BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_report_no (tenant_id, report_no),
+  KEY idx_tenant_phone (tenant_id, customer_phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='渠道报单';
+
+CREATE TABLE commission_record (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT NOT NULL,
+  channel_id BIGINT,
+  employee_id BIGINT,
+  commission_type VARCHAR(32) NOT NULL COMMENT 'SALES/PHOTO/MAKEUP/EDITOR/ADDON/CHANNEL',
+  rule_snapshot VARCHAR(1000),
+  base_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/SETTLED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_order (tenant_id, order_id),
+  KEY idx_tenant_channel (tenant_id, channel_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='佣金/提成';
+
+CREATE TABLE settlement (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  settlement_no VARCHAR(64) NOT NULL,
+  target_type VARCHAR(16) NOT NULL COMMENT 'CHANNEL/SUPPLIER/EMPLOYEE',
+  target_id BIGINT NOT NULL,
+  period VARCHAR(16) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/CONFIRMED/PAID',
+  paid_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_settle_no (tenant_id, settlement_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='结算单';
+
+CREATE TABLE supplier (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  supplier_no VARCHAR(64) NOT NULL,
+  supplier_name VARCHAR(128) NOT NULL,
+  category VARCHAR(32) NOT NULL COMMENT 'ALBUM/FRAME/DRESS/FLOWER',
+  rating VARCHAR(8) DEFAULT 'A',
+  payment_days INT NOT NULL DEFAULT 30,
+  contact_name VARCHAR(64),
+  contact_phone VARCHAR(32),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_supplier_no (tenant_id, supplier_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='供应商';
+
+CREATE TABLE supplier_qualification (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  supplier_id BIGINT NOT NULL,
+  qual_type VARCHAR(64) NOT NULL,
+  file_url VARCHAR(500),
+  expire_date DATE,
+  remind_flag TINYINT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_supplier (tenant_id, supplier_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='供应商资质';
+
+CREATE TABLE employee (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  store_id BIGINT,
+  user_id BIGINT,
+  employee_no VARCHAR(64) NOT NULL,
+  real_name VARCHAR(64) NOT NULL,
+  role_type VARCHAR(32) NOT NULL COMMENT 'SALES/PHOTOGRAPHER/MAKEUP/EDITOR/ASSISTANT',
+  phone VARCHAR(32),
+  hire_date DATE,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_emp_no (tenant_id, employee_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工';
+
+CREATE TABLE employee_schedule (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  employee_id BIGINT NOT NULL,
+  store_id BIGINT,
+  work_date DATE NOT NULL,
+  shift VARCHAR(32),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_emp_date (tenant_id, employee_id, work_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工排班';
+
+CREATE TABLE commission_rule (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  rule_name VARCHAR(128) NOT NULL,
+  rule_type VARCHAR(32) NOT NULL COMMENT 'SALES/PHOTO/EDITOR/ADDON/CHANNEL',
+  base_type VARCHAR(24) NOT NULL DEFAULT 'ORDER_AMOUNT',
+  rate DECIMAL(5,2) NOT NULL DEFAULT 0,
+  fixed_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  ladder_json VARCHAR(1000),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='提成规则';
+
+CREATE TABLE commission_detail (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  commission_record_id BIGINT NOT NULL,
+  employee_id BIGINT,
+  rule_id BIGINT,
+  rule_snapshot VARCHAR(1000),
+  amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  settle_status VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_record (tenant_id, commission_record_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='提成明细';
+
+CREATE TABLE report_task (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  task_no VARCHAR(64) NOT NULL,
+  report_type VARCHAR(64) NOT NULL,
+  params_json VARCHAR(2000),
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/RUNNING/DONE/FAILED',
+  file_url VARCHAR(500),
+  error_msg VARCHAR(1000),
+  created_by BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_task_no (tenant_id, task_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='异步报表任务';
+
+CREATE TABLE qr_entry (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  entry_name VARCHAR(64) NOT NULL,
+  end_type VARCHAR(32) NOT NULL COMMENT 'MINI_USER/MINI_PROD/MINI_SUPPLIER/MINI_CHANNEL/MP/H5/APP',
+  url VARCHAR(500),
+  qr_url VARCHAR(500),
+  store_id BIGINT,
+  channel_id BIGINT,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='多端入口/二维码';
+
+-- ---------------- CMS ----------------
+
+CREATE TABLE cms_banner (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  title VARCHAR(128),
+  image_url VARCHAR(500) NOT NULL,
+  link_url VARCHAR(500),
+  lang_code VARCHAR(16) NOT NULL DEFAULT 'zh',
+  sort_no INT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
+  start_at DATETIME,
+  end_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='官网 Banner';
+
+CREATE TABLE cms_article (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  category_id BIGINT,
+  title VARCHAR(200) NOT NULL,
+  title_en VARCHAR(200),
+  summary VARCHAR(500),
+  cover_url VARCHAR(500),
+  content LONGTEXT,
+  content_en LONGTEXT,
+  seo_title VARCHAR(200),
+  seo_keywords VARCHAR(500),
+  seo_description VARCHAR(500),
+  lang_code VARCHAR(16) NOT NULL DEFAULT 'zh',
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT' COMMENT 'DRAFT/PUBLISHED/OFFLINE',
+  publish_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_status (tenant_id, status, publish_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资讯文章';
+
+CREATE TABLE cms_case (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  order_id BIGINT,
+  title VARCHAR(200) NOT NULL,
+  cover_url VARCHAR(500),
+  content TEXT,
+  authorized TINYINT NOT NULL DEFAULT 0 COMMENT '肖像授权：未授权不可发布',
+  auth_revoke_at DATETIME,
+  lang_code VARCHAR(16) NOT NULL DEFAULT 'zh',
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT' COMMENT 'DRAFT/PUBLISHED/OFFLINE',
+  sort_no INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  KEY idx_tenant_auth (tenant_id, authorized, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='客片案例';
+
+CREATE TABLE cms_route (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  route_name VARCHAR(128) NOT NULL,
+  destination VARCHAR(128),
+  days INT,
+  price DECIMAL(12,2),
+  cover_url VARCHAR(500),
+  content TEXT,
+  lang_code VARCHAR(16) NOT NULL DEFAULT 'zh',
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='旅拍线路';
+
+CREATE TABLE cms_lead_form (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  form_name VARCHAR(128) NOT NULL,
+  fields_json VARCHAR(2000),
+  store_id BIGINT,
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='留资表单';
+
+CREATE TABLE cms_lead_submit (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  form_id BIGINT,
+  name VARCHAR(64),
+  phone VARCHAR(32),
+  content VARCHAR(1000),
+  lead_id BIGINT,
+  ip VARCHAR(64),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_phone (tenant_id, phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='留资提交';
+
+-- ---------------- 微信公众号 ----------------
+
+CREATE TABLE mp_account (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_name VARCHAR(128) NOT NULL,
+  app_id VARCHAR(64) NOT NULL,
+  app_secret_encrypted VARCHAR(1000),
+  server_url VARCHAR(255),
+  token VARCHAR(128),
+  encoding_aes_key VARCHAR(255),
+  oauth_domain VARCHAR(255),
+  js_domain VARCHAR(255),
+  mini_app_id VARCHAR(64),
+  mini_app_secret_encrypted VARCHAR(1000),
+  mini_request_domain VARCHAR(255),
+  mini_upload_domain VARCHAR(255),
+  mini_download_domain VARCHAR(255),
+  qr_url VARCHAR(500),
+  status TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT NOT NULL DEFAULT 0,
+  UNIQUE KEY uk_tenant_appid (tenant_id, app_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号/小程序凭证';
+
+CREATE TABLE mp_fan (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  open_id VARCHAR(128) NOT NULL,
+  union_id VARCHAR(128),
+  nickname VARCHAR(128),
+  avatar VARCHAR(500),
+  subscribe_status TINYINT NOT NULL DEFAULT 1,
+  subscribe_at DATETIME,
+  unsubscribe_at DATETIME,
+  remark VARCHAR(255),
+  member_id BIGINT,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_account_open (tenant_id, account_id, open_id),
+  KEY idx_tenant_union (tenant_id, union_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号粉丝';
+
+CREATE TABLE mp_tag (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  tag_id BIGINT,
+  tag_name VARCHAR(64) NOT NULL,
+  sync_status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/SYNCED/FAILED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_account_tag (tenant_id, account_id, tag_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号标签';
+
+CREATE TABLE mp_fan_tag (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  fan_id BIGINT NOT NULL,
+  tag_id BIGINT NOT NULL,
+  UNIQUE KEY uk_fan_tag (tenant_id, fan_id, tag_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='粉丝标签';
+
+CREATE TABLE mp_message (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  open_id VARCHAR(128),
+  direction VARCHAR(16) NOT NULL COMMENT 'IN/OUT',
+  msg_type VARCHAR(32),
+  content TEXT,
+  raw_payload TEXT,
+  err_code INT,
+  err_msg VARCHAR(500),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_account_created (tenant_id, account_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号消息流水';
+
+CREATE TABLE mp_material (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  media_type VARCHAR(16) NOT NULL COMMENT 'IMAGE/VOICE/VIDEO',
+  media_id VARCHAR(128),
+  file_name VARCHAR(255),
+  object_key VARCHAR(500),
+  size_bytes BIGINT,
+  thumb_media_id VARCHAR(128),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_account_type (tenant_id, account_id, media_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号素材';
+
+CREATE TABLE mp_draft (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  media_id VARCHAR(128),
+  title VARCHAR(200) NOT NULL,
+  author VARCHAR(64),
+  source_url VARCHAR(500),
+  cover_url VARCHAR(500),
+  digest VARCHAR(500),
+  content LONGTEXT,
+  articles_json LONGTEXT COMMENT '多图文',
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT' COMMENT 'DRAFT/SUBMITTED/FAILED',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_tenant_account (tenant_id, account_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图文草稿';
+
+CREATE TABLE mp_publish (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  draft_id BIGINT,
+  publish_id VARCHAR(128),
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/PUBLISHED/FAILED',
+  fail_reason VARCHAR(1000),
+  published_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_account (tenant_id, account_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='图文发表记录';
+
+CREATE TABLE mp_auto_reply (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  scene VARCHAR(16) NOT NULL COMMENT 'SUBSCRIBE/MESSAGE/KEYWORD',
+  match_type VARCHAR(16) NOT NULL DEFAULT 'FULL' COMMENT 'FULL/HALF',
+  keyword VARCHAR(128),
+  reply_type VARCHAR(16) NOT NULL COMMENT 'TEXT/IMAGE/VOICE/VIDEO/NEWS/VOICE_MUSIC',
+  content TEXT,
+  media_id VARCHAR(128),
+  enabled TINYINT NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_account_scene (tenant_id, account_id, scene)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号自动回复';
+
+CREATE TABLE mp_template (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  template_id VARCHAR(128) NOT NULL,
+  title VARCHAR(200),
+  content TEXT,
+  example TEXT,
+  industry VARCHAR(128),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_tenant_account_template (tenant_id, account_id, template_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='微信模板库（只读同步）';
+
+CREATE TABLE mp_menu_publish (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  tenant_id BIGINT NOT NULL,
+  account_id BIGINT NOT NULL,
+  config_id BIGINT,
+  status VARCHAR(16) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING/PUBLISHED/FAILED',
+  err_code INT,
+  err_msg VARCHAR(500),
+  published_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_tenant_account (tenant_id, account_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公众号菜单发布记录';

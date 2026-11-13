@@ -1,0 +1,9 @@
+<view class="container">
+  <view class="section-title">套系选购</view>
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" mode="aspectFill" style="width:100%;height:300rpx;border-radius:8rpx" />
+    <view class="row" style="margin-top:16rpx"><text>{{item.name}}</text><text class="price">¥{{item.price}}</text></view>
+    <view class="muted">{{item.description}}</view>
+  </view>
+  <view wx:if="{{!list.length}}" class="muted">暂未发布套系</view>
+</view>

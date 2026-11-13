@@ -1,0 +1,9 @@
+{
+  "description": "光影纪用户端小程序",
+  "packOptions": { "ignore": [] },
+  "setting": { "urlCheck": false, "es6": true, "postcss": true, "minified": true },
+  "compileType": "miniprogram",
+  "libVersion": "3.0.0",
+  "appid": "touristappid",
+  "projectname": "wedding-user"
+}

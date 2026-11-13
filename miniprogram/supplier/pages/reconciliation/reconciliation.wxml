@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="section-title">月度对账</view>
+  <view class="card">
+    <view class="row"><text>账期</text><text>{{data.period || '本月'}}</text></view>
+    <view class="row"><text>制作单数</text><text>{{data.orderCount || 0}}</text></view>
+    <view class="row"><text>应结金额</text><text class="price">¥{{data.amount || 0}}</text></view>
+    <view class="row"><text>已结金额</text><text>{{data.paidAmount || 0}}</text></view>
+  </view>
+  <view wx:if="{{data.items}}" class="section-title">明细</view>
+  <view wx:for="{{data.items}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.order_no}}</text><text>¥{{item.amount}}</text></view>
+  </view>
+</view>

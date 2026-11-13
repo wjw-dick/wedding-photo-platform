@@ -1,0 +1,8 @@
+<view class="container">
+  <view class="section-title">渠道商登录</view>
+  <input class="input" placeholder="租户编码" value="{{tenantCode}}" data-field="tenantCode" bindinput="onInput" />
+  <input class="input" placeholder="账号" data-field="username" bindinput="onInput" />
+  <input class="input" password placeholder="密码" data-field="password" bindinput="onInput" />
+  <view class="btn" bindtap="login">登录</view>
+  <view class="muted" style="margin-top:16rpx">账号由租户后台在“渠道分销”中开通。</view>
+</view>

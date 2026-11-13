@@ -1,0 +1,16 @@
+<view class="container">
+  <view wx:if="{{!token}}" class="card">
+    <view class="section-title">会员中心</view>
+    <view class="muted">登录后可查看订单、选片进度与交付文件。</view>
+    <view class="btn" bindtap="goLogin">手机号登录</view>
+  </view>
+  <view wx:else>
+    <view class="card">
+      <view class="row"><text>{{profile.real_name || '会员'}}</text><text class="price">{{profile.points || 0}} 积分</text></view>
+      <view class="muted">{{profile.phone}}</view>
+      <view class="muted">储值余额 ¥{{profile.balance || 0}}</view>
+    </view>
+    <view class="card" bindtap="goOrders"><view class="row"><text>我的订单</text><text>›</text></view></view>
+    <view class="card" bindtap="logout"><view class="row"><text>退出登录</text><text>›</text></view></view>
+  </view>
+</view>

@@ -1,0 +1,11 @@
+page { background: #f7f3ee; color: #2c2622; font-family: "Songti SC", serif; }
+.container { padding: 24rpx; }
+.card { background: #fff; border-radius: 8rpx; padding: 24rpx; margin-bottom: 20rpx; border: 1rpx solid #e7ded4; }
+.row { display: flex; justify-content: space-between; align-items: center; }
+.muted { color: #7a6f66; font-size: 24rpx; }
+.price { color: #b98b5e; font-size: 32rpx; }
+.btn { background: #b98b5e; color: #fff; border-radius: 40rpx; padding: 20rpx; text-align: center; margin-top: 20rpx; }
+.btn.ghost { background: #fff; color: #b98b5e; border: 1rpx solid #b98b5e; }
+.input { border: 1rpx solid #e7ded4; border-radius: 8rpx; padding: 20rpx; margin-bottom: 16rpx; background: #fff; }
+.section-title { font-size: 34rpx; letter-spacing: 4rpx; margin: 32rpx 0 20rpx; }
+.tag { font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 20rpx; background: #f1e6d8; color: #9a7b5c; }

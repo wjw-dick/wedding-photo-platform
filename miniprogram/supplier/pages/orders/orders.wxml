@@ -1,0 +1,14 @@
+<view class="container">
+  <view class="section-title">制作单</view>
+  <view wx:for="{{list}}" wx:key="id" class="card">
+    <view class="row"><text>{{item.order_no || item.product_no}}</text><text class="tag">{{item.status}}</text></view>
+    <view class="muted">{{item.product_name || item.item_name}} · 数量 {{item.quantity || 1}}</view>
+    <view wx:if="{{item.status === 'PENDING'}}" class="row">
+      <view class="btn" style="width:46%" data-id="{{item.id}}" data-action="ACCEPT" bindtap="action">接单</view>
+      <view class="btn ghost" style="width:46%" data-id="{{item.id}}" data-action="REJECT" bindtap="action">拒单</view>
+    </view>
+    <view wx:if="{{item.status === 'ACCEPTED'}}" class="btn" data-id="{{item.id}}" data-action="PRODUCING" bindtap="action">开始生产</view>
+    <view wx:if="{{item.status === 'PRODUCING'}}" class="btn" data-id="{{item.id}}" bindtap="ship">填写物流并发货</view>
+  </view>
+  <view wx:if="{{!list.length}}" class="muted">暂无制作单</view>
+</view>
