@@ -10,7 +10,9 @@
 
     <div class="card">
       <el-table :data="configs" border stripe>
-        <el-table-column prop="provider" label="驱动" width="140" />
+        <el-table-column label="驱动" width="140">
+          <template #default="{ row }">{{ dictLabel(row.provider) }}</template>
+        </el-table-column>
         <el-table-column prop="endpoint" label="Endpoint" min-width="200" />
         <el-table-column prop="bucket" label="Bucket" width="150" />
         <el-table-column prop="region" label="Region" width="130" />
@@ -54,6 +56,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const configs = ref([])
 const activeProvider = ref('')

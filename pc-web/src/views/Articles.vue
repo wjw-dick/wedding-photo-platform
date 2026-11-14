@@ -3,6 +3,7 @@
     <div class="section-head"><h2>资讯</h2><span>拍摄攻略与品牌动态</span></div>
     <div class="grid grid-2">
       <router-link v-for="a in list" :key="a.id" :to="`/articles/${a.id}`" class="card">
+        <img v-if="a.cover_url" :src="a.cover_url" class="cover" :alt="a.title" />
         <div class="card-body">
           <h3>{{ a.title }}</h3>
           <p class="muted">{{ a.summary }}</p>

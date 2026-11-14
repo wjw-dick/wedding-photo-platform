@@ -21,7 +21,7 @@
         </div>
         <div class="card card-body">
           <h3>我的优惠券</h3>
-          <p v-for="c in coupons" :key="c.id">{{ c.coupon_name }} · {{ c.status }}</p>
+          <p v-for="c in coupons" :key="c.id">{{ c.coupon_name }} · {{ lbl(couponStatus, c.status) }}</p>
           <p v-if="!coupons.length" class="muted">暂无优惠券</p>
         </div>
       </div>
@@ -29,7 +29,7 @@
       <div class="card card-body">
         <div v-for="o in orders" :key="o.id" style="display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:12px 0">
           <div><b>{{ o.order_no }}</b><div class="muted">{{ o.package_name || '婚纱摄影' }} · {{ o.shoot_date || '待定' }}</div></div>
-          <div style="text-align:right"><div class="price">¥{{ o.total_amount }}</div><span class="muted">{{ o.status }}</span></div>
+          <div style="text-align:right"><div class="price">¥{{ o.total_amount }}</div><span class="muted">{{ lbl(orderStatus, o.status) }}</span></div>
         </div>
         <p v-if="!orders.length" class="muted">暂无订单</p>
       </div>
@@ -48,6 +48,10 @@ const profile = ref({})
 const orders = ref([])
 const coupons = ref([])
 const error = ref('')
+
+const orderStatus = { LEAD: '线索', ARRIVED: '已到店', DEPOSIT: '已收定', SCHEDULED: '已排期', SHOOTING: '拍摄中', SELECTING: '选片中', RETOUCHING: '修片中', PRODUCING: '制作中', PICKUP: '待取件', COMPLETED: '已完成', CONFIRMED: '已确认', DELIVERED: '已交付', CANCELLED: '已取消' }
+const couponStatus = { UNUSED: '未使用', USED: '已使用', EXPIRED: '已过期' }
+const lbl = (map, v) => map[v] || v || '—'
 
 async function login() {
   error.value = ''

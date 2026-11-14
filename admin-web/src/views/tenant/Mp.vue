@@ -16,7 +16,11 @@
           <el-table-column prop="app_id" label="AppID" width="180" />
           <el-table-column prop="server_url" label="服务器回调" min-width="240" show-overflow-tooltip />
           <el-table-column prop="app_secret_encrypted" label="AppSecret" width="140" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="330" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="sync(row, 'tags')">同步标签</el-button>

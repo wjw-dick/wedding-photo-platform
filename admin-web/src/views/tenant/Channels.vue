@@ -14,11 +14,17 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="channel_no" label="编号" width="140" />
           <el-table-column prop="channel_name" label="名称" min-width="150" />
-          <el-table-column prop="channel_type" label="类型" width="110" />
+          <el-table-column label="类型" width="110">
+            <template #default="{ row }">{{ dictLabel(row.channel_type) }}</template>
+          </el-table-column>
           <el-table-column prop="contact_name" label="联系人" width="110" />
           <el-table-column prop="contact_phone" label="电话" width="130" />
           <el-table-column prop="commission_rate" label="佣金比例" width="110" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="report(row)">代报单</el-button>
@@ -38,7 +44,9 @@
           <el-table-column prop="channel_name" label="渠道" width="140" />
           <el-table-column prop="customer_name" label="客户" width="110" />
           <el-table-column prop="phone" label="电话" width="130" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="created_at" label="报单时间" width="170" />
           <el-table-column label="操作" width="190" fixed="right">
             <template #default="{ row }">
@@ -63,7 +71,9 @@
           <el-table-column prop="target_name" label="对象" width="150" />
           <el-table-column prop="period" label="周期" width="110" />
           <el-table-column prop="amount" label="金额" width="110" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
               <el-button v-if="row.status !== 'PAID'" link type="primary" @click="paySettlement(row)">打款</el-button>
@@ -76,7 +86,9 @@
           <el-table-column prop="order_no" label="订单号" width="160" />
           <el-table-column prop="channel_name" label="渠道" width="140" />
           <el-table-column prop="amount" label="佣金" width="100" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="created_at" label="时间" width="170" />
         </el-table>
       </el-tab-pane>
@@ -89,6 +101,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const tab = ref('channels')
 const channels = ref([])

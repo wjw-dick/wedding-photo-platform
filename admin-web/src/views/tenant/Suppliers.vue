@@ -14,12 +14,20 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="supplier_no" label="编号" width="140" />
           <el-table-column prop="supplier_name" label="名称" min-width="160" />
-          <el-table-column prop="category" label="品类" width="110" />
-          <el-table-column prop="rating" label="评级" width="90" />
+          <el-table-column label="品类" width="110">
+            <template #default="{ row }">{{ dictLabel(row.category) }}</template>
+          </el-table-column>
+          <el-table-column label="评级" width="90">
+            <template #default="{ row }">{{ dictLabel(row.rating) }}</template>
+          </el-table-column>
           <el-table-column prop="payment_days" label="账期" width="90" />
           <el-table-column prop="contact_name" label="联系人" width="110" />
           <el-table-column prop="contact_phone" label="电话" width="130" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="130" fixed="right">
             <template #default="{ row }"><el-button link type="primary" @click="account(row)">开通账号</el-button></template>
           </el-table-column>
@@ -39,7 +47,9 @@
           <el-table-column prop="order_count" label="制作单数" width="110" />
           <el-table-column prop="amount" label="应结金额" width="120" />
           <el-table-column prop="paid_amount" label="已付金额" width="120" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
 
@@ -60,6 +70,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const tab = ref('suppliers')
 const suppliers = ref([])

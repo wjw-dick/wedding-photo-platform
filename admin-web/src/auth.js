@@ -41,3 +41,8 @@ export async function loginTenant(tenantCode, username, password) {
   setSession(data, false)
   return data
 }
+
+export async function changePassword(platform, oldPassword, newPassword) {
+  const url = platform ? '/platform/auth/change-password' : '/auth/change-password'
+  return post(url, { oldPassword, newPassword })
+}

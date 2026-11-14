@@ -28,7 +28,7 @@
             <el-tag v-if="c.type === 'switch'" :type="Number(row[c.key]) ? 'success' : 'info'" size="small">
               {{ Number(row[c.key]) ? '启用' : '停用' }}
             </el-tag>
-            <span v-else>{{ display(row[c.key]) }}</span>
+            <span v-else>{{ cellText(row, c) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
@@ -70,7 +70,7 @@
             style="width:100%"
           />
           <el-select v-else-if="f.type?.startsWith('select:')" v-model="form[f.key]" clearable style="width:100%">
-            <el-option v-for="o in f.type.slice(7).split(',')" :key="o" :label="o" :value="o" />
+            <el-option v-for="o in dictOptions(f.type.slice(7))" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>
           <el-input
             v-else
@@ -95,6 +95,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 import { del, get, post, put } from '../../api'
 import { CRUD } from '../../crud'
+import { dictLabel, dictOptions } from '../../dict'
 
 const route = useRoute()
 const table = computed(() => route.meta.table)
@@ -180,6 +181,12 @@ function display(v) {
   if (v === null || v === undefined) return ''
   const s = String(v)
   return s.length > 80 ? s.slice(0, 80) + '…' : s
+}
+
+function cellText(row, col) {
+  const v = row[col.key]
+  if (col.type && col.type.startsWith('select:')) return dictLabel(v)
+  return display(v)
 }
 
 watch(() => route.meta.table, () => { page.value = 1; keyword.value = ''; load() })

@@ -14,11 +14,17 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="employee_no" label="工号" width="120" />
           <el-table-column prop="real_name" label="姓名" width="110" />
-          <el-table-column prop="role_type" label="角色" width="120" />
+          <el-table-column label="角色" width="120">
+            <template #default="{ row }">{{ dictLabel(row.role_type) }}</template>
+          </el-table-column>
           <el-table-column prop="phone" label="电话" width="130" />
           <el-table-column prop="store_name" label="门店" width="140" />
           <el-table-column prop="hire_date" label="入职" width="120" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
         </el-table>
         <el-pagination class="mt16" layout="total, prev, pager, next" :total="total" :page-size="20" :current-page="page"
           @current-change="(p) => { page = p; loadEmployees() }" />
@@ -33,8 +39,14 @@
           <el-table-column prop="work_date" label="日期" width="120" />
           <el-table-column prop="real_name" label="员工" width="120" />
           <el-table-column prop="store_name" label="门店" width="150" />
-          <el-table-column prop="shift" label="班次" width="120" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="班次" width="120">
+            <template #default="{ row }">{{ dictLabel(row.shift) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
 
@@ -42,11 +54,19 @@
         <el-table :data="rules" border stripe>
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="rule_name" label="规则" width="160" />
-          <el-table-column prop="rule_type" label="类型" width="120" />
-          <el-table-column prop="base_type" label="基数" width="140" />
+          <el-table-column label="类型" width="120">
+            <template #default="{ row }">{{ ruleType(row.rule_type) }}</template>
+          </el-table-column>
+          <el-table-column label="基数" width="140">
+            <template #default="{ row }">{{ dictLabel(row.base_type) }}</template>
+          </el-table-column>
           <el-table-column prop="rate" label="比例" width="100" />
           <el-table-column prop="fixed_amount" label="固定金额" width="110" />
-          <el-table-column prop="status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
 
@@ -57,7 +77,9 @@
           <el-table-column prop="employee_name" label="员工" width="120" />
           <el-table-column prop="rule_name" label="规则" width="150" />
           <el-table-column prop="amount" label="金额" width="100" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="created_at" label="时间" width="170" />
         </el-table>
       </el-tab-pane>
@@ -88,6 +110,10 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
+
+const ruleTypeMap = { SALES: '销售提成', PHOTO: '拍摄提成', EDITOR: '修片提成', ADDON: '加购提成', CHANNEL: '渠道提成' }
+const ruleType = (v) => ruleTypeMap[v] || dictLabel(v)
 
 const tab = ref('employees')
 const employees = ref([])

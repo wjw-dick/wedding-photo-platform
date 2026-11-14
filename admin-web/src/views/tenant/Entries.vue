@@ -12,12 +12,18 @@
       <el-table :data="rows" border stripe>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="entry_name" label="入口名称" min-width="150" />
-        <el-table-column prop="end_type" label="端类型" width="140" />
+        <el-table-column label="端类型" width="140">
+          <template #default="{ row }">{{ endLabel(row.end_type) }}</template>
+        </el-table-column>
         <el-table-column prop="url" label="目标地址" min-width="260" show-overflow-tooltip />
         <el-table-column prop="store_name" label="门店" width="130" />
         <el-table-column prop="channel_name" label="渠道" width="130" />
         <el-table-column prop="scan_count" label="扫码数" width="90" />
-        <el-table-column prop="status" label="状态" width="90" />
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="showQr(row)">二维码</el-button>
@@ -72,6 +78,7 @@ const types = [
   { value: 'H5', label: 'H5 分享页' },
   { value: 'PC', label: 'PC 官网' }
 ]
+const endLabel = (v) => types.find((t) => t.value === v)?.label || v
 const rows = ref([])
 const dialog = ref(false)
 const form = ref({})

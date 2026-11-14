@@ -1,8 +1,10 @@
 <template>
   <div>
     <section class="hero">
+      <img v-if="home.banners?.[0]?.image_url" :src="home.banners[0].image_url" class="hero-bg" :alt="home.banners[0].title" />
+      <div v-if="home.banners?.[0]?.image_url" class="hero-mask"></div>
       <div class="hero-inner container">
-        <h1>把爱情拍成电影</h1>
+        <h1>{{ home.banners?.[0]?.title || '把爱情拍成电影' }}</h1>
         <p>城市轻旅拍 · 婚礼跟拍 · 双影像记录</p>
         <div style="margin-top:34px">
           <router-link class="btn solid" to="/contact">立即预约</router-link>
@@ -44,7 +46,8 @@
       <div class="section-head"><h2>旅拍线路</h2><router-link to="/travel" class="muted">全部线路 →</router-link></div>
       <div class="grid grid-3">
         <div v-for="r in home.routes?.slice(0, 3)" :key="r.id" class="card">
-          <div class="placeholder">{{ r.destination }}</div>
+          <img v-if="r.cover_url" :src="r.cover_url" class="cover" :alt="r.route_name" />
+          <div v-else class="placeholder">{{ r.destination }}</div>
           <div class="card-body">
             <h3>{{ r.route_name }}</h3>
             <p class="muted">{{ r.days }} 天 · {{ r.destination }}</p>
@@ -73,6 +76,7 @@
       <div class="section-head"><h2>最新资讯</h2><router-link to="/articles" class="muted">全部资讯 →</router-link></div>
       <div class="grid grid-3">
         <router-link v-for="a in home.articles?.slice(0, 3)" :key="a.id" :to="`/articles/${a.id}`" class="card">
+          <img v-if="a.cover_url" :src="a.cover_url" class="cover" :alt="a.title" />
           <div class="card-body">
             <h3>{{ a.title }}</h3>
             <p class="muted">{{ a.summary }}</p>

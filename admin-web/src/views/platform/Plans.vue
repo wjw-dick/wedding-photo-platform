@@ -9,14 +9,18 @@
         <el-table-column prop="plan_id" label="ID" width="70" />
         <el-table-column prop="plan_name" label="套餐名称" />
         <el-table-column prop="price" label="价格" width="110" />
-        <el-table-column prop="billing_cycle" label="周期" width="90" />
+        <el-table-column label="周期" width="90">
+          <template #default="{ row }">{{ cycleMap[row.billing_cycle] || dictLabel(row.billing_cycle) }}</template>
+        </el-table-column>
         <el-table-column prop="seat_limit" label="席位" width="80" />
         <el-table-column prop="mp_account_limit" label="公众号" width="90" />
         <el-table-column prop="storage_quota_gb" label="存储GB" width="90" />
         <el-table-column prop="sms_quota" label="短信" width="90" />
         <el-table-column prop="api_quota" label="API" width="110" />
         <el-table-column prop="trial_days" label="试用天数" width="100" />
-        <el-table-column prop="status" label="状态" width="90" />
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
             <el-button link type="primary" @click="open(row)">编辑</el-button>
@@ -53,6 +57,9 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { del, get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
+
+const cycleMap = { YEAR: '年付', MONTH: '月付', QUARTER: '季付' }
 
 const rows = ref([])
 const dialog = ref(false)

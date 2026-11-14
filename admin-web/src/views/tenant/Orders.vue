@@ -12,7 +12,7 @@
       <div class="toolbar">
         <el-input v-model="query.keyword" placeholder="订单号 / 客户 / 电话" clearable style="width:220px" @keyup.enter="load" />
         <el-select v-model="query.status" clearable placeholder="订单状态" style="width:150px">
-          <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
+          <el-option v-for="s in statuses" :key="s" :label="dictLabel(s)" :value="s" />
         </el-select>
         <el-button :icon="Search" @click="load">查询</el-button>
       </div>
@@ -26,7 +26,7 @@
         <el-table-column prop="total_amount" label="总额" width="100" />
         <el-table-column prop="paid_amount" label="已付" width="100" />
         <el-table-column label="状态" width="105">
-          <template #default="{ row }"><el-tag size="small" :type="tag(row.status)">{{ row.status }}</el-tag></template>
+          <template #default="{ row }"><el-tag size="small" :type="tag(row.status)">{{ dictLabel(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
@@ -45,7 +45,7 @@
       <template v-if="detail">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="订单号">{{ detail.order.order_no }}</el-descriptions-item>
-          <el-descriptions-item label="状态">{{ detail.order.status }}</el-descriptions-item>
+          <el-descriptions-item label="状态">{{ dictLabel(detail.order.status) }}</el-descriptions-item>
           <el-descriptions-item label="客户">{{ detail.order.customer_name }}</el-descriptions-item>
           <el-descriptions-item label="电话">{{ detail.order.customer_phone }}</el-descriptions-item>
           <el-descriptions-item label="套系">{{ detail.order.package_name }}</el-descriptions-item>
@@ -69,15 +69,19 @@
         <h4>状态流转</h4>
         <el-timeline>
           <el-timeline-item v-for="l in detail.statusLogs" :key="l.id" :timestamp="l.created_at">
-            {{ l.from_status || '—' }} → {{ l.to_status }} {{ l.remark || '' }}
+            {{ dictLabel(l.from_status) || '—' }} → {{ dictLabel(l.to_status) }} {{ l.remark || '' }}
           </el-timeline-item>
         </el-timeline>
         <h4>支付记录</h4>
         <el-table :data="detail.payments" border size="small">
           <el-table-column prop="pay_no" label="支付号" min-width="140" />
-          <el-table-column prop="pay_type" label="类型" width="90" />
+          <el-table-column label="类型" width="90">
+            <template #default="{ row }">{{ dictLabel(row.pay_type) }}</template>
+          </el-table-column>
           <el-table-column prop="amount" label="金额" width="90" />
-          <el-table-column prop="pay_status" label="状态" width="90" />
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">{{ dictLabel(row.pay_status) }}</template>
+          </el-table-column>
         </el-table>
       </template>
     </el-drawer>
@@ -147,6 +151,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const statuses = ['LEAD', 'ARRIVED', 'CONFIRMED', 'SHOOTING', 'SELECTING', 'RETOUCHING', 'PRODUCING', 'DELIVERED', 'COMPLETED', 'CANCELLED']
 const rows = ref([])

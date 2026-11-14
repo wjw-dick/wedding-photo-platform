@@ -21,7 +21,9 @@
         <el-table-column prop="city" label="城市" width="110" />
         <el-table-column prop="requirement" label="需求" min-width="180" show-overflow-tooltip />
         <el-table-column prop="source_page" label="来源页" width="150" />
-        <el-table-column prop="status" label="状态" width="110" />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
         <el-table-column prop="created_at" label="提交时间" width="170" />
         <el-table-column label="操作" width="110" fixed="right">
           <template #default="{ row }">
@@ -40,6 +42,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const rows = ref([])
 const total = ref(0)

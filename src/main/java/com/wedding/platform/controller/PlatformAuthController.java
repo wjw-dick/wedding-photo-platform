@@ -23,6 +23,15 @@ public class PlatformAuthController {
         return R.ok(authService.me());
     }
 
+    @PostMapping("/change-password")
+    public R<Void> changePassword(@RequestBody ChangePwdReq req) {
+        authService.changePassword(req.oldPassword(), req.newPassword());
+        return R.ok();
+    }
+
     public record LoginReq(String username, String password) {
+    }
+
+    public record ChangePwdReq(String oldPassword, String newPassword) {
     }
 }

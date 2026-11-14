@@ -16,7 +16,9 @@
           <el-table-column prop="customer_name" label="客户" width="120" />
           <el-table-column prop="gather_time" label="集合" width="90" />
           <el-table-column prop="gather_place" label="地点" show-overflow-tooltip />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column label="操作" width="240">
             <template #default="{ row }">
               <el-button v-if="row.status === 'PENDING'" link type="primary" @click="dispatch(row)">派工</el-button>
@@ -32,7 +34,9 @@
           <el-table-column prop="id" label="任务ID" width="90" />
           <el-table-column prop="order_no" label="订单号" width="160" />
           <el-table-column prop="customer_name" label="客户" width="120" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="created_at" label="创建时间" width="180" />
           <el-table-column label="操作" width="240">
             <template #default="{ row }">
@@ -50,7 +54,9 @@
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="order_no" label="订单号" width="160" />
           <el-table-column prop="supplier_name" label="供应商" width="150" />
-          <el-table-column prop="status" label="状态" width="120" />
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="tracking_no" label="物流单号" width="150" />
           <el-table-column label="操作" width="300">
             <template #default="{ row }">
@@ -67,8 +73,12 @@
         <el-table :data="deliveries" border stripe>
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="order_no" label="订单号" width="160" />
-          <el-table-column prop="delivery_type" label="方式" width="120" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="方式" width="120">
+            <template #default="{ row }">{{ dictLabel(row.delivery_type) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="retain_end" label="留存截止" width="130" />
           <el-table-column label="操作" width="300">
             <template #default="{ row }">
@@ -84,10 +94,14 @@
         <el-table :data="dresses" border stripe>
           <el-table-column prop="dress_no" label="编号" width="140" />
           <el-table-column prop="dress_name" label="名称" width="160" />
-          <el-table-column prop="category" label="品类" width="110" />
+          <el-table-column label="品类" width="110">
+            <template #default="{ row }">{{ dictLabel(row.category) }}</template>
+          </el-table-column>
           <el-table-column prop="size" label="尺码" width="90" />
           <el-table-column prop="rent_price" label="租金" width="100" />
-          <el-table-column prop="status" label="状态" width="120" />
+          <el-table-column label="状态" width="120">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column label="操作" width="160">
             <template #default="{ row }">
               <el-button v-if="row.status === 'AVAILABLE'" link type="primary" @click="rent(row)">租出</el-button>
@@ -104,6 +118,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const tab = ref('shoot')
 const shoot = ref([])

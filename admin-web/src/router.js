@@ -4,6 +4,7 @@ import { groups } from './crud'
 
 const routes = [
   { path: '/login', component: () => import('./views/Login.vue'), meta: { public: true } },
+  { path: '/sso-login', component: () => import('./views/SsoLogin.vue'), meta: { public: true } },
   {
     path: '/',
     component: () => import('./layouts/AdminLayout.vue'),

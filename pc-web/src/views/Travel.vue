@@ -3,7 +3,8 @@
     <div class="section-head"><h2>旅拍线路</h2><span>目的地 · 天数 · 一价全含</span></div>
     <div class="grid grid-3">
       <div v-for="r in list" :key="r.id" class="card">
-        <div class="placeholder">{{ r.destination }}</div>
+        <img v-if="r.cover_url" :src="r.cover_url" class="cover" :alt="r.route_name" />
+        <div v-else class="placeholder">{{ r.destination }}</div>
         <div class="card-body">
           <h3>{{ r.route_name }}</h3>
           <p class="muted">{{ r.days }} 天 · {{ r.destination }}</p>

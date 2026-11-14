@@ -66,9 +66,10 @@
           <span class="muted" style="margin-left:10px">{{ auth.platform ? '平台运营' : (auth.session?.tenant?.name || '') }}</span>
         </div>
         <div class="flex">
-          <el-tag v-if="!auth.platform && auth.session?.tenant?.status" size="small" type="success">{{ auth.session.tenant.status }}</el-tag>
-          <el-tag v-if="auth.platform" size="small" type="warning">{{ auth.user?.platformRole || auth.user?.role || 'PLATFORM' }}</el-tag>
+          <el-tag v-if="!auth.platform && auth.session?.tenant?.status" size="small" type="success">{{ dictLabel(auth.session.tenant.status) }}</el-tag>
+          <el-tag v-if="auth.platform" size="small" type="warning">{{ dictLabel(auth.user?.platformRole || auth.user?.role || 'PLATFORM') }}</el-tag>
           <span>{{ auth.user?.realName || auth.user?.username || auth.user?.user?.realName }}</span>
+          <el-button link type="primary" @click="openPwd">修改密码</el-button>
           <el-button link type="danger" @click="logout">退出</el-button>
         </div>
       </el-header>
@@ -76,19 +77,66 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <el-dialog v-model="pwdDialog" title="修改密码" width="420px" destroy-on-close>
+      <el-form label-width="90px">
+        <el-form-item label="原密码">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input v-model="pwdForm.confirm" type="password" show-password autocomplete="off" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialog = false">取消</el-button>
+        <el-button type="primary" :loading="pwdSaving" @click="savePwd">保存</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { auth, clearSession } from '../auth'
+import { ElMessage } from 'element-plus'
+import { auth, clearSession, changePassword } from '../auth'
+import { dictLabel } from '../dict'
 import { groups } from '../crud'
 
 const route = useRoute()
 const router = useRouter()
 const active = computed(() => route.path)
 const group = (title) => groups.find((g) => g.title === title)?.items || []
+
+const pwdDialog = ref(false)
+const pwdSaving = ref(false)
+const pwdForm = reactive({ oldPassword: '', newPassword: '', confirm: '' })
+
+function openPwd() {
+  pwdForm.oldPassword = ''
+  pwdForm.newPassword = ''
+  pwdForm.confirm = ''
+  pwdDialog.value = true
+}
+
+async function savePwd() {
+  if (!pwdForm.oldPassword) return ElMessage.warning('请输入原密码')
+  if (!pwdForm.newPassword || pwdForm.newPassword.length < 6) return ElMessage.warning('新密码至少 6 位')
+  if (pwdForm.newPassword !== pwdForm.confirm) return ElMessage.warning('两次输入的新密码不一致')
+  pwdSaving.value = true
+  try {
+    await changePassword(auth.platform, pwdForm.oldPassword, pwdForm.newPassword)
+    ElMessage.success('密码已修改，请重新登录')
+    pwdDialog.value = false
+    clearSession()
+    router.push('/login')
+  } finally {
+    pwdSaving.value = false
+  }
+}
 
 function logout() {
   clearSession()

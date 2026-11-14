@@ -13,7 +13,7 @@
         <div class="toolbar">
           <el-input v-model="leadQuery.keyword" placeholder="姓名 / 电话" clearable style="width:220px" @keyup.enter="loadLeads" />
           <el-select v-model="leadQuery.status" clearable placeholder="状态" style="width:150px">
-            <el-option v-for="s in leadStatuses" :key="s" :label="s" :value="s" />
+            <el-option v-for="s in leadStatuses" :key="s" :label="dictLabel(s)" :value="s" />
           </el-select>
           <el-button :icon="Search" @click="loadLeads">查询</el-button>
           <el-button :icon="Bell" @click="reminders">跟进提醒</el-button>
@@ -22,10 +22,14 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="customer_name" label="客户" width="110" />
           <el-table-column prop="phone" label="电话" width="130" />
-          <el-table-column prop="source" label="来源" width="110" />
+          <el-table-column label="来源" width="110">
+            <template #default="{ row }">{{ dictLabel(row.source) }}</template>
+          </el-table-column>
           <el-table-column prop="intent_package" label="意向套系" width="130" show-overflow-tooltip />
           <el-table-column prop="owner_name" label="跟进人" width="110" />
-          <el-table-column prop="status" label="状态" width="110" />
+          <el-table-column label="状态" width="110">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
           <el-table-column prop="next_follow_at" label="下次跟进" width="165" />
           <el-table-column label="操作" width="260" fixed="right">
             <template #default="{ row }">
@@ -102,7 +106,9 @@
         </el-table>
         <h4>最近优惠券</h4>
         <el-table :data="detail.coupons || []" border size="small">
-          <el-table-column prop="coupon_name" label="券" /><el-table-column prop="status" label="状态" width="100" />
+          <el-table-column prop="coupon_name" label="券" /><el-table-column label="状态" width="100">
+            <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+          </el-table-column>
         </el-table>
       </template>
     </el-dialog>
@@ -114,6 +120,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Bell, Plus, Search } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const leadStatuses = ['NEW', 'FOLLOWING', 'VISITED', 'CONVERTED', 'INVALID']
 const tab = ref('leads')

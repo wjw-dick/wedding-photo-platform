@@ -12,9 +12,13 @@
       <el-table :data="rows" border stripe>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="target_type" label="范围" width="110" />
+        <el-table-column label="范围" width="110">
+          <template #default="{ row }">{{ targetMap[row.target_type] || dictLabel(row.target_type) }}</template>
+        </el-table-column>
         <el-table-column prop="target_value" label="目标" width="140" show-overflow-tooltip />
-        <el-table-column prop="status" label="状态" width="110" />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
         <el-table-column prop="publish_at" label="发布时间" width="170" />
         <el-table-column label="操作" width="230">
           <template #default="{ row }">
@@ -64,6 +68,9 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { del, get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
+
+const targetMap = { ALL: '全部租户', PLAN: '指定套餐', TENANT: '指定租户' }
 
 const rows = ref([])
 const total = ref(0)

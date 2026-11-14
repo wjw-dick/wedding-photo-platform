@@ -11,7 +11,9 @@
     <el-tabs v-model="tab" type="border-card">
       <el-tab-pane label="消息通道" name="channels">
         <el-table :data="message.channels || []" border stripe>
-          <el-table-column prop="channel" label="通道" width="130" />
+          <el-table-column label="通道" width="130">
+            <template #default="{ row }">{{ dictLabel(row.channel) }}</template>
+          </el-table-column>
           <el-table-column label="启用" width="100">
             <template #default="{ row }">
               <el-switch :model-value="!!row.enabled" @change="(v) => toggleChannel(row, v)" />
@@ -23,7 +25,9 @@
 
       <el-tab-pane label="短信渠道" name="sms">
         <el-table :data="message.sms || []" border stripe>
-          <el-table-column prop="provider" label="服务商" width="140" />
+          <el-table-column label="服务商" width="140">
+            <template #default="{ row }">{{ dictLabel(row.provider) }}</template>
+          </el-table-column>
           <el-table-column label="启用" width="100">
             <template #default="{ row }">
               <el-switch :model-value="!!row.enabled" @change="(v) => toggleSms(row, v)" />
@@ -44,8 +48,12 @@
 
       <el-tab-pane label="消息模板" name="templates">
         <el-table :data="message.templates || []" border stripe>
-          <el-table-column prop="node" label="触发节点" width="170" />
-          <el-table-column prop="channel" label="通道" width="110" />
+          <el-table-column label="触发节点" width="170">
+            <template #default="{ row }">{{ dictLabel(row.node) }}</template>
+          </el-table-column>
+          <el-table-column label="通道" width="110">
+            <template #default="{ row }">{{ dictLabel(row.channel) }}</template>
+          </el-table-column>
           <el-table-column prop="template_id" label="模板 ID" width="180" />
           <el-table-column prop="title" label="标题" min-width="150" />
           <el-table-column label="启用" width="90">
@@ -107,6 +115,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
 
 const tab = ref('channels')
 const message = ref({})

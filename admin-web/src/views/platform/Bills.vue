@@ -16,7 +16,7 @@
         <el-input v-model.number="query.tenantId" placeholder="租户 ID" clearable style="width:140px" />
         <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="账期" style="width:150px" />
         <el-select v-model="query.status" clearable placeholder="状态" style="width:150px">
-          <el-option v-for="s in ['UNPAID', 'PAID', 'OVERDUE']" :key="s" :label="s" :value="s" />
+          <el-option v-for="s in ['UNPAID', 'PAID', 'OVERDUE']" :key="s" :label="dictLabel(s)" :value="s" />
         </el-select>
         <el-button :icon="Search" @click="load">查询</el-button>
       </div>
@@ -29,7 +29,7 @@
         <el-table-column prop="unitPrice" label="单价" width="100" />
         <el-table-column prop="amount" label="金额" width="110" />
         <el-table-column label="状态" width="100">
-          <template #default="{ row }"><el-tag :type="row.status === 'PAID' ? 'success' : row.status === 'OVERDUE' ? 'danger' : 'warning'" size="small">{{ row.status }}</el-tag></template>
+          <template #default="{ row }"><el-tag :type="row.status === 'PAID' ? 'success' : row.status === 'OVERDUE' ? 'danger' : 'warning'" size="small">{{ dictLabel(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="paidAt" label="支付时间" width="170" />
         <el-table-column label="操作" width="110">
@@ -55,6 +55,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Money, Search } from '@element-plus/icons-vue'
 import { download, get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const rows = ref([])
 const total = ref(0)

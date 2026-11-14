@@ -40,3 +40,6 @@ __pycache__/
 .pytest_cache/
 .coverage
 /tmp/
+
+# 部署临时打包产物（zip / 探针脚本）
+deploy/pkg/

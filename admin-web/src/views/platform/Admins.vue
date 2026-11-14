@@ -14,7 +14,7 @@
         <el-table-column prop="username" label="账号" width="160" />
         <el-table-column prop="real_name" label="姓名" width="140" />
         <el-table-column label="角色" width="170">
-          <template #default="{ row }"><el-tag size="small">{{ row.role }}</el-tag></template>
+          <template #default="{ row }"><el-tag size="small">{{ dictLabel(row.role) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }"><el-tag :type="row.status ? 'success' : 'info'" size="small">{{ row.status ? '启用' : '停用' }}</el-tag></template>
@@ -56,6 +56,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const rows = ref([])
 const dialog = ref(false)

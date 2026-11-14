@@ -15,17 +15,19 @@
       <div class="toolbar">
         <el-input v-model="keyword" placeholder="租户编码 / 名称" clearable style="width:240px" @keyup.enter="load" />
         <el-select v-model="status" clearable placeholder="状态" style="width:160px" @change="load">
-          <el-option v-for="s in statuses" :key="s" :label="s" :value="s" />
+          <el-option v-for="s in statuses" :key="s" :label="dictLabel(s)" :value="s" />
         </el-select>
         <el-button :icon="Search" @click="load">查询</el-button>
       </div>
       <el-table :data="rows" v-loading="loading" border stripe>
         <el-table-column prop="tenantCode" label="编码" width="120" />
         <el-table-column prop="tenantName" label="租户名称" min-width="160" />
-        <el-table-column prop="industry" label="行业" width="140" />
+        <el-table-column label="行业" width="140">
+          <template #default="{ row }">{{ dictLabel(row.industry) }}</template>
+        </el-table-column>
         <el-table-column prop="planName" label="套餐" width="120" />
         <el-table-column label="状态" width="100">
-          <template #default="{ row }"><el-tag :type="tag(row.status)" size="small">{{ row.status }}</el-tag></template>
+          <template #default="{ row }"><el-tag :type="tag(row.status)" size="small">{{ dictLabel(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="expireAt" label="到期时间" width="170" />
         <el-table-column label="席位" width="100">
@@ -126,6 +128,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Download } from '@element-plus/icons-vue'
 import { del, download, get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
 
 const statuses = ['TRIAL', 'ACTIVE', 'OVERDUE', 'SUSPENDED', 'EXPIRED']
 const rows = ref([])

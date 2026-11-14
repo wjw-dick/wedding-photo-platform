@@ -37,7 +37,9 @@
         <h3 style="margin-top:0">员工业绩</h3>
         <el-table :data="overview.employeePerformance || []" border size="small">
           <el-table-column prop="real_name" label="员工" />
-          <el-table-column prop="role_type" label="角色" width="120" />
+          <el-table-column label="角色" width="120">
+            <template #default="{ row }">{{ dictLabel(row.role_type) }}</template>
+          </el-table-column>
           <el-table-column prop="items" label="提成笔数" width="100" />
           <el-table-column prop="commission" label="提成" width="110" />
         </el-table>
@@ -58,8 +60,12 @@
       </div>
       <el-table :data="tasks" border size="small">
         <el-table-column prop="task_no" label="任务号" width="170" />
-        <el-table-column prop="report_type" label="类型" width="120" />
-        <el-table-column prop="status" label="状态" width="110" />
+        <el-table-column label="类型" width="120">
+          <template #default="{ row }">{{ reportTypeMap[row.report_type] || dictLabel(row.report_type) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
         <el-table-column prop="error_msg" label="错误" min-width="150" show-overflow-tooltip />
         <el-table-column prop="created_at" label="创建时间" width="170" />
         <el-table-column label="操作" width="120">
@@ -78,6 +84,9 @@ import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
+
+const reportTypeMap = { orders: '订单明细', revenue: '收入汇总', summary: '经营汇总' }
 
 const range = ref([new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10)])
 const overview = ref({})

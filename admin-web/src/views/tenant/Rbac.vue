@@ -14,7 +14,9 @@
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="role_name" label="角色名称" width="160" />
           <el-table-column prop="role_code" label="编码" width="150" />
-          <el-table-column prop="data_scope" label="数据范围" width="120" />
+          <el-table-column label="数据范围" width="120">
+            <template #default="{ row }">{{ scopeMap[row.data_scope] || dictLabel(row.data_scope) }}</template>
+          </el-table-column>
           <el-table-column prop="user_count" label="账号数" width="100" />
           <el-table-column prop="remark" label="说明" min-width="150" />
           <el-table-column label="操作" width="200">
@@ -39,7 +41,9 @@
           <el-table-column prop="phone" label="手机" width="130" />
           <el-table-column prop="roles" label="角色" min-width="150" />
           <el-table-column prop="store_name" label="门店" width="140" />
-          <el-table-column prop="user_type" label="类型" width="100" />
+          <el-table-column label="类型" width="100">
+            <template #default="{ row }">{{ dictLabel(row.user_type) }}</template>
+          </el-table-column>
           <el-table-column label="状态" width="90">
             <template #default="{ row }"><el-tag :type="row.status ? 'success' : 'info'" size="small">{{ row.status ? '启用' : '停用' }}</el-tag></template>
           </el-table-column>
@@ -106,6 +110,9 @@ import { nextTick, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { del, get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
+
+const scopeMap = { ALL: '全部', STORE: '本门店', SELF: '仅本人' }
 
 const tab = ref('roles')
 const roles = ref([])

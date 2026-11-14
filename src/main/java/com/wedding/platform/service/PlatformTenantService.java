@@ -144,8 +144,10 @@ public class PlatformTenantService {
         jdbc.update("INSERT INTO sys_role(tenant_id, role_code, role_name, data_scope, remark) VALUES (?,?,?,?,?)",
                 tid, "FINANCE", "财务", "ALL", "");
 
-        Long storeId = insertKeys("INSERT INTO sys_store(tenant_id, store_name, address, phone, capacity) VALUES (?,?,?,?,?)",
-                tid, "总部门店", "", "", 4);
+        Long storeId = insertKeys("""
+                INSERT INTO sys_store(tenant_id, store_name, address, phone, business_hours, capacity)
+                VALUES (?,?,?,?,?,?)
+                """, tid, "总部门店", "上海市静安区南京西路 888 号", "021-6288-0000", "09:00-21:00", 4);
 
         Long adminId = insertKeys("""
                 INSERT INTO sys_user(tenant_id, store_id, username, password, real_name, phone, user_type, status)
@@ -196,18 +198,7 @@ public class PlatformTenantService {
         }
         jdbc.update("INSERT INTO platform_tenant_quota_usage(tenant_id, stat_date, used_seat) VALUES (?,?,1)",
                 tid, LocalDate.now());
-        // 演示数据：一个上架套系与资源，便于开通后立即体验
-        jdbc.update("""
-                INSERT INTO pkg_package(tenant_id, package_no, name, price, deposit, finished_count, retouch_count,
-                    delivery_days, status, shoot_duration, dress_count, scene_count)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-                """, tid, "PKG-001", "轻奢婚纱套系", 6999, 2100, 120, 30, 30, "ON", "8小时", 4, 3);
-        jdbc.update("INSERT INTO pkg_addon(tenant_id, addon_code, addon_name, addon_type, unit, base_price) VALUES (?,?,?,?,?,?)",
-                tid, "ADD-PHOTO", "加片", "EXTRA_PHOTO", "张", 50);
-        jdbc.update("INSERT INTO sch_resource(tenant_id, store_id, resource_type, resource_name, capacity) VALUES (?,?,?,?,1)",
-                tid, storeId, "PHOTOGRAPHER", "首席摄影师");
-        jdbc.update("INSERT INTO sch_resource(tenant_id, store_id, resource_type, resource_name, capacity) VALUES (?,?,?,?,1)",
-                tid, storeId, "MAKEUP", "首席化妆师");
+        seedDemoContent(tid, storeId);
         jdbc.update("""
                 INSERT INTO contract_template(tenant_id, template_name, content, status)
                 VALUES (?,?,?,1)
@@ -225,6 +216,127 @@ public class PlatformTenantService {
                 四、客片肖像使用须另行授权。
                 五、客片保留期 90 天，逾期可申请延期一次。
                 """);
+    }
+
+    /** 演示内容：套系、加购、资源、案例、线路、资讯、Banner，便于开通后官网与后台立即有数据可看。 */
+    private void seedDemoContent(Long tid, Long storeId) {
+        Object[][] addons = {
+                {"ADD-PHOTO", "加片", "EXTRA_PHOTO", "张", 50},
+                {"ADD-ALBUM", "加购相册", "EXTRA_ALBUM", "本", 800},
+                {"ADD-FRAME", "相框", "FRAME", "个", 300},
+                {"ADD-URGENT", "加急精修", "URGENT", "单", 500},
+                {"ADD-DRESS", "服装升级", "DRESS_UP", "套", 600},
+                {"ADD-MAKEUP", "妆造升级", "MAKEUP", "次", 400}
+        };
+        for (Object[] a : addons) {
+            jdbc.update("INSERT INTO pkg_addon(tenant_id, addon_code, addon_name, addon_type, unit, base_price) VALUES (?,?,?,?,?,?)",
+                    tid, a[0], a[1], a[2], a[3], a[4]);
+        }
+        Object[][] resources = {
+                {"PHOTOGRAPHER", "首席摄影师"}, {"MAKEUP", "首席化妆师"},
+                {"STUDIO", "城市影棚"}, {"CAMERA", "双机位相机"}
+        };
+        for (Object[] r : resources) {
+            jdbc.update("INSERT INTO sch_resource(tenant_id, store_id, resource_type, resource_name, capacity) VALUES (?,?,?,?,1)",
+                    tid, storeId, r[0], r[1]);
+        }
+
+        Object[][] packages = {
+                {"PKG-001", "轻奢婚纱套系", "photo-1606800052052-a08af7148866", "8小时", 4, 3, 120, 30, "18寸精装相册", 6999, 2100, 30,
+                        "室内轻奢布景与外景街拍结合，双机位记录仪式与细节，含造型、服装与精修，适合注重质感的新人。"},
+                {"PKG-002", "海景旅拍套系", "photo-1465495976277-4387d4b0b4c6", "全天", 5, 4, 150, 40, "20寸海景相册", 8999, 2700, 35,
+                        "海边日出与日落双时段拍摄，含往返交通与场景布置，精修自然通透，附赠航拍花絮短片。"},
+                {"PKG-003", "城市街拍套系", "photo-1511285560929-80b456fea0bc", "6小时", 3, 2, 100, 25, "16寸杂志相册", 4999, 1500, 25,
+                        "城市地标与街巷纪实抓拍，轻松自然不摆拍，适合日常感与情侣写真风格。"},
+                {"PKG-004", "中式嫁衣套系", "photo-1522673607200-164d1b6ce486", "8小时", 4, 3, 130, 35, "18寸国风相册", 7999, 2400, 30,
+                        "秀禾与龙凤褂造型，中式庭院与红墙场景，含传统妆造与仪式跟拍，还原国风婚礼氛围。"}
+        };
+        Map<String, String[][]> packageItems = new LinkedHashMap<>();
+        packageItems.put("PKG-001", new String[][]{
+                {"拍摄机位", "双机位（主机+细节机）"}, {"服装造型", "新娘 3 套 + 新郎 1 套"},
+                {"精修照片", "30 张"}, {"相册成品", "18 寸精装相册 1 本"}
+        });
+        packageItems.put("PKG-002", new String[][]{
+                {"拍摄机位", "双机位 + 航拍"}, {"服装造型", "新娘 4 套 + 新郎 1 套"},
+                {"精修照片", "40 张"}, {"交通住宿", "含往返交通，住宿自理"}
+        });
+        packageItems.put("PKG-003", new String[][]{
+                {"拍摄机位", "单机位"}, {"服装造型", "新娘 2 套 + 新郎 1 套"},
+                {"精修照片", "25 张"}, {"底片", "全底片赠送"}
+        });
+        packageItems.put("PKG-004", new String[][]{
+                {"拍摄机位", "双机位"}, {"服装造型", "中式嫁衣 3 套 + 便装 1 套"},
+                {"精修照片", "35 张"}, {"妆造", "传统中式妆造含头饰"}
+        });
+        int pkgSort = 1;
+        for (Object[] p : packages) {
+            Long pid = insertKeys("""
+                    INSERT INTO pkg_package(tenant_id, package_no, name, cover_url, shoot_duration, dress_count, scene_count,
+                        finished_count, retouch_count, album_spec, price, deposit, delivery_days, description, status, sort_no)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'ON', ?)
+                    """, tid, p[0], p[1], img((String) p[2]), p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], pkgSort++);
+            String[][] items = packageItems.get((String) p[0]);
+            if (items != null) {
+                int sort = 1;
+                for (String[] it : items) {
+                    jdbc.update("INSERT INTO pkg_package_item(tenant_id, package_id, item_name, item_value, sort_no) VALUES (?,?,?,?,?)",
+                            tid, pid, it[0], it[1], sort++);
+                }
+            }
+        }
+
+        Object[][] cases = {
+                {"外滩黄昏 · 林先生与陈小姐", "photo-1583939003579-730e3918a45a", "黄昏外滩街景，暖色调纪实风格，已获新人肖像授权。"},
+                {"海景诺言 · 王先生与李小姐", "photo-1537633552985-df8429e8048b", "海边日落外景，轻纱与海风，自然光精修。"},
+                {"古城漫步 · 张先生与周小姐", "photo-1520854221256-17451cc331bf", "古城街巷纪实抓拍，轻松日常感情侣写真。"},
+                {"花园仪式 · 赵先生与吴小姐", "photo-1469371670807-013ccf25f16a", "花园草坪仪式跟拍，花艺与细节特写。"}
+        };
+        int sortNo = 1;
+        for (Object[] c : cases) {
+            jdbc.update("""
+                    INSERT INTO cms_case(tenant_id, title, cover_url, content, authorized, status, sort_no, lang_code)
+                    VALUES (?,?,?,?,1,'PUBLISHED',?,'zh')
+                    """, tid, c[0], img((String) c[1]), c[2], sortNo++);
+        }
+
+        Object[][] routes = {
+                {"三亚海景旅拍", "三亚", 4, 6800, "photo-1591604466107-ec97de577aff", "天涯海角、椰梦长廊、帆船港，含接机与海景场景。"},
+                {"大理古城旅拍", "大理", 3, 5200, "photo-1532712938310-34cb3982ef74", "古城、洱海、喜洲古镇，白墙青瓦与环湖公路。"},
+                {"青岛海岸旅拍", "青岛", 3, 4600, "photo-1516589178581-6cd7833ae3b2", "栈桥、八大关、海岸线，欧式街区与礁石日落。"}
+        };
+        for (Object[] r : routes) {
+            jdbc.update("""
+                    INSERT INTO cms_route(tenant_id, route_name, destination, days, price, cover_url, content, status, lang_code)
+                    VALUES (?,?,?,?,?,?,?,1,'zh')
+                    """, tid, r[0], r[1], r[2], r[3], img((String) r[4]), r[5]);
+        }
+
+        Object[][] articles = {
+                {"2026 婚纱照流行风格趋势解读", "从纪实抓拍、极简轻奢到国风嫁衣，盘点今年新人偏爱的影像风格。", "photo-1546032996-6dfacbacbf3f", 0},
+                {"海景旅拍出行准备清单", "服装、防晒、配饰与时间安排，海边拍摄前需要准备的细节。", "photo-1478146896981-b80fe463b330", 2},
+                {"如何挑选适合自己的婚纱套系", "按场景、服装、精修张数与预算拆解套系选择思路，避开隐性消费。", "photo-1511285560929-80b456fea0bc", 4}
+        };
+        for (Object[] a : articles) {
+            jdbc.update("""
+                    INSERT INTO cms_article(tenant_id, title, summary, cover_url, content, status, lang_code, publish_at)
+                    VALUES (?,?,?,?,?, 'PUBLISHED', 'zh', ?)
+                    """, tid, a[0], a[1], img((String) a[2]), "<p>" + a[1] + "</p>", LocalDateTime.now().minusDays((long) a[3]));
+        }
+
+        Object[][] banners = {
+                {"把爱情拍成电影", "photo-1606800052052-a08af7148866", "/packages", 1},
+                {"海景旅拍 · 全年档期可约", "photo-1522673607200-164d1b6ce486", "/travel", 2}
+        };
+        for (Object[] b : banners) {
+            jdbc.update("""
+                    INSERT INTO cms_banner(tenant_id, title, image_url, link_url, lang_code, sort_no, status)
+                    VALUES (?,?,?,?, 'zh', ?, 1)
+                    """, tid, b[0], img((String) b[1]), b[2], b[3]);
+        }
+    }
+
+    private String img(String id) {
+        return "https://images.unsplash.com/" + id + "?w=1200&q=80&auto=format&fit=crop";
     }
 
     private void seedMenus(Long tid, Long adminRoleId) {

@@ -74,4 +74,18 @@ public class TenantAuthService {
                 "userType", user.getUserType(), "storeId", user.getStoreId(),
                 "permissions", user.getPermissions());
     }
+
+    public void changePassword(String oldPassword, String newPassword) {
+        LoginContext.LoginUser user = LoginContext.require();
+        SysUser u = userMapper.selectById(user.getId());
+        if (u == null) throw new BizException(404, "账号不存在");
+        if (!passwordEncoder.matches(oldPassword, u.getPassword())) {
+            throw new BizException(400, "原密码不正确");
+        }
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new BizException(400, "新密码至少 6 位");
+        }
+        u.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(u);
+    }
 }

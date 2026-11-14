@@ -15,7 +15,7 @@
       <div class="toolbar">
         <el-date-picker v-model="range" type="daterange" value-format="YYYY-MM-DD" start-placeholder="开始" end-placeholder="结束" style="width:260px" />
         <el-select v-model="type" clearable placeholder="资源类型" style="width:170px">
-          <el-option v-for="t in types" :key="t" :label="t" :value="t" />
+          <el-option v-for="t in types" :key="t" :label="dictLabel(t)" :value="t" />
         </el-select>
         <el-button :icon="Search" @click="load">查询</el-button>
       </div>
@@ -25,14 +25,18 @@
           <template #default="{ row }">{{ String(row.slot_start).slice(0, 5) }} - {{ String(row.slot_end).slice(0, 5) }}</template>
         </el-table-column>
         <el-table-column prop="resource_name" label="资源" width="150" />
-        <el-table-column prop="resource_type" label="类型" width="120" />
+        <el-table-column label="类型" width="120">
+          <template #default="{ row }">{{ dictLabel(row.resource_type) }}</template>
+        </el-table-column>
         <el-table-column prop="store_name" label="门店" width="130" />
         <el-table-column label="容量" width="100">
           <template #default="{ row }">{{ row.used_count }} / {{ row.capacity }}</template>
         </el-table-column>
         <el-table-column prop="order_no" label="关联订单" width="160" />
         <el-table-column prop="customer_name" label="客户" width="110" />
-        <el-table-column prop="status" label="状态" width="110" />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button v-if="row.lock_key" link type="danger" @click="release(row)">释放锁</el-button>
@@ -47,11 +51,17 @@
       <el-table :data="resources" border size="small">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="resource_name" label="资源" width="150" />
-        <el-table-column prop="resource_type" label="类型" width="130" />
+        <el-table-column label="类型" width="130">
+          <template #default="{ row }">{{ dictLabel(row.resource_type) }}</template>
+        </el-table-column>
         <el-table-column prop="store_name" label="门店" width="140" />
         <el-table-column prop="employee_name" label="关联员工" width="120" />
         <el-table-column prop="capacity" label="容量" width="90" />
-        <el-table-column prop="status" label="状态" width="90" />
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="Number(row.status) ? 'success' : 'info'" size="small">{{ Number(row.status) ? '启用' : '停用' }}</el-tag>
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -80,6 +90,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Search } from '@element-plus/icons-vue'
 import { get, post } from '../../api'
+import { dictLabel } from '../../dict'
 
 const types = ['PHOTOGRAPHER', 'MAKEUP', 'STUDIO', 'CAMERA', 'DRESS']
 const range = ref([new Date().toISOString().slice(0, 10), new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)])

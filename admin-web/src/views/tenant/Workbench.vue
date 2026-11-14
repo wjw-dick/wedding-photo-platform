@@ -40,8 +40,12 @@
       <el-table :data="data.exceptions || []" border size="small" empty-text="暂无异常">
         <el-table-column prop="order_no" label="订单号" width="160" />
         <el-table-column prop="customer_name" label="客户" width="120" />
-        <el-table-column prop="status" label="状态" width="110" />
-        <el-table-column prop="abnormal_status" label="异常标记" width="140" />
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">{{ dictLabel(row.status) }}</template>
+        </el-table-column>
+        <el-table-column label="异常标记" width="140">
+          <template #default="{ row }">{{ dictLabel(row.abnormal_status) }}</template>
+        </el-table-column>
         <el-table-column prop="updated_at" label="更新时间" width="180" />
       </el-table>
     </div>
@@ -52,6 +56,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
 import { get } from '../../api'
+import { dictLabel } from '../../dict'
 
 const data = ref({})
 const today = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })

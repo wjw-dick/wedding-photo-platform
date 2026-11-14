@@ -14,9 +14,13 @@
         <el-table :data="configs" border stripe>
           <el-table-column prop="id" label="ID" width="70" />
           <el-table-column prop="config_name" label="名称" min-width="150" />
-          <el-table-column prop="end_type" label="端" width="130" />
+          <el-table-column label="端" width="130">
+            <template #default="{ row }">{{ dictLabel(row.end_type) }}</template>
+          </el-table-column>
           <el-table-column prop="item_count" label="项数" width="80" />
-          <el-table-column prop="published" label="已发布" width="90" />
+          <el-table-column label="已发布" width="90">
+            <template #default="{ row }">{{ Number(row.published) ? '已发布' : '未发布' }}</template>
+          </el-table-column>
           <el-table-column label="操作" width="130">
             <template #default="{ row }"><el-button link type="primary" @click="select(row)">编辑</el-button></template>
           </el-table-column>
@@ -46,6 +50,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
 import { get, post, put } from '../../api'
+import { dictLabel } from '../../dict'
 
 const configs = ref([])
 const selected = ref(null)
